@@ -1,3 +1,20 @@
+*.pdf
+*.bbl
+*.synctex.gz
+*.aux
+*.log
+*.out
+*.toc
+*.blg
+*.fdb_latexmk
+*.fls
+*.nav
+*.snm
+*.vrb
+*.lof
+*.lot
+*.dvi
+*.xdv       
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
