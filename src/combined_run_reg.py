@@ -1,9 +1,9 @@
 """
-Combined Classification Tuning Script
-====================================
+Combined Regression Tuning Script
+=================================
 
 This script combines passive, uncertainty-based, and sensitivity-based active learning
-for classification tasks with consistent cross-validation and checkpoint handling.
+for regression tasks with consistent cross-validation and checkpoint handling.
 
 Features:
 - Cross-validation with multiple trials for robust evaluation
@@ -18,7 +18,7 @@ import json
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold
 from typing import Dict, List, Tuple
 from tqdm import tqdm
 import time
@@ -27,9 +27,9 @@ import math
 
 from alnn.models import OneHiddenMLP
 from alnn.training import train_passive, TrainConfig
-from alnn.evaluation import evaluate_classification
-from alnn.experiments import ActiveConfig, run_active_classification
-from alnn.data import make_classification_split, to_datasets
+from alnn.evaluation import evaluate_regression
+from alnn.experiments import ActiveConfig, run_active_regression
+from alnn.data import make_regression_split, to_datasets
 
 from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
@@ -44,29 +44,30 @@ DATA_DIR = os.path.join('..', 'data')
 os.makedirs(FIGURES_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 
-DATASETS = ['iris', 'wine', 'breast_cancer']
+# DATASETS = ['diabetes', 'linnerud', 'california']
+# METHODS = ['entropy', 'margin', 'least_confidence']
+# LR = [3e-3, 1e-2, 3e-2]  # More conservative LR range for regression
+# WD = [0.0, 1e-5, 1e-4]
+# HIDDEN = [32, 64, 128]
+# BS = [32, 64]
+# BUDGETS = [40, 80, 120, 160, 200]
+# N_TRIALS = 5  # Number of random seeds for each config
+# N_FOLDS = 5  # Number of CV folds
+# INITS = [10, 20, 40]
+# QUERIES = [5, 10, 20]
+
+
+DATASETS = ['diabetes', 'linnerud', 'california']
 METHODS = ['entropy', 'margin', 'least_confidence']
-LR = [3e-3, 1e-2, 3e-2]
-WD = [0.0, 1e-5, 1e-4]
-HIDDEN = [32, 64, 128]
-BS = [32, 64]
-BUDGETS = [40, 80, 120, 160, 200]
+LR = [3e-3]  # More conservative LR range for regression
+WD = [1e-4]
+HIDDEN = [32]
+BS = [32]
+BUDGETS = [40]
 N_TRIALS = 5  # Number of random seeds for each config
 N_FOLDS = 5  # Number of CV folds
-INITS = [10, 20, 40]
-QUERIES = [5, 10, 20]
-
-# DATASETS = ['iris', 'wine', 'breast_cancer']
-# METHODS = ['entropy', 'margin', 'least_confidence']
-# LR = [3e-3]
-# WD = [1e-4]
-# HIDDEN = [128]
-# BS = [64]
-# BUDGETS = [40]
-# N_TRIALS = 1  # Number of random seeds for each config
-# N_FOLDS = 2  # Number of CV folds
-# INITS = [10]
-# QUERIES = [5]
+INITS = [10]
+QUERIES = [5]
 
 def nan_to_none(obj):
     if isinstance(obj, float) and math.isnan(obj):
@@ -78,8 +79,8 @@ def nan_to_none(obj):
     return obj
 
 
-class ClassificationTuner:
-    """Main class for classification hyperparameter tuning."""
+class RegressionTuner:
+    """Main class for regression hyperparameter tuning."""
     
     def __init__(self, datasets: List[str] = None):
         self.datasets = datasets or DATASETS
@@ -127,20 +128,23 @@ class ClassificationTuner:
     def _get_data_splits(self, dataset: str):
         """Get train/validation/test splits for hyperparameter tuning."""
         # Load data
-        if dataset == "iris":
-            ds = datasets.load_iris()
-        elif dataset == "wine":
-            ds = datasets.load_wine()
-        elif dataset == "breast_cancer":
-            ds = datasets.load_breast_cancer()
+        if dataset == "diabetes":
+            ds = datasets.load_diabetes()
+            y = ds.target.astype(np.float32)
+        elif dataset == "linnerud":
+            ds = datasets.load_linnerud()
+            y = ds.target[:, 0].astype(np.float32)  # use one target (Weight)
+        elif dataset == "california":
+            ds = datasets.fetch_california_housing()
+            y = ds.target.astype(np.float32)
         
-        X, y = ds.data, ds.target
+        X = ds.data.astype(np.float32)
         
         # Split into train+val (80%) and test (20%) - test set is held out for final evaluation
         # Use fixed random state (42) so test set is always the same across all trials
         from sklearn.model_selection import train_test_split
         X_train_val, X_test, y_train_val, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
+            X, y, test_size=0.2, random_state=42
         )
         
         return X_train_val, X_test, y_train_val, y_test
@@ -159,10 +163,10 @@ class ClassificationTuner:
             
             trial_metrics = []
             
-            # Use StratifiedKFold for classification on train+val only (test is completely held out)
-            skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=42 + trial)
+            # Use KFold for regression on train+val only (test is completely held out)
+            kf = KFold(n_splits=N_FOLDS, shuffle=True, random_state=42 + trial)
             
-            for fold, (train_idx, val_idx) in enumerate(skf.split(X_train_val, y_train_val)):
+            for fold, (train_idx, val_idx) in enumerate(kf.split(X_train_val)):
                 X_train, X_val = X_train_val[train_idx], X_train_val[val_idx]
                 y_train, y_val = y_train_val[train_idx], y_train_val[val_idx]
                 
@@ -173,9 +177,9 @@ class ClassificationTuner:
                 
                 # Convert to tensors
                 X_train_tensor = torch.tensor(X_train_scaled, dtype=torch.float32)
-                y_train_tensor = torch.tensor(y_train, dtype=torch.long)
+                y_train_tensor = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)
                 X_val_tensor = torch.tensor(X_val_scaled, dtype=torch.float32)
-                y_val_tensor = torch.tensor(y_val, dtype=torch.long)
+                y_val_tensor = torch.tensor(y_val, dtype=torch.float32).unsqueeze(-1)
                 
                 # Create datasets
                 train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
@@ -185,14 +189,14 @@ class ClassificationTuner:
                 val_loader = DataLoader(val_dataset, batch_size=bs, shuffle=False)
                 
                 # Train model
-                model = OneHiddenMLP(input_dim=X_train_scaled.shape[1], hidden_units=hidden, output_dim=len(np.unique(y_train_val)))
-                loss_fn = nn.CrossEntropyLoss()
+                model = OneHiddenMLP(input_dim=X_train_scaled.shape[1], hidden_units=hidden, output_dim=1)
+                loss_fn = nn.MSELoss()
                 config = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20, device='cpu')
                 
                 train_passive(model, train_loader, val_loader, loss_fn, config)
                 
                 # Evaluate on validation set only
-                metrics = evaluate_classification(model, val_loader, device='cpu')
+                metrics = evaluate_regression(model, val_loader, device='cpu')
                 trial_metrics.append(metrics)
             
             # Average across folds for this trial
@@ -225,10 +229,10 @@ class ClassificationTuner:
             
             trial_metrics = []
             
-            # Use StratifiedKFold for classification on train+val only (test is completely held out)
-            skf = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=42 + trial)
+            # Use KFold for regression on train+val only (test is completely held out)
+            kf = KFold(n_splits=N_FOLDS, shuffle=True, random_state=42 + trial)
             
-            for fold, (train_idx, val_idx) in enumerate(skf.split(X_train_val, y_train_val)):
+            for fold, (train_idx, val_idx) in enumerate(kf.split(X_train_val)):
                 X_train, X_val = X_train_val[train_idx], X_train_val[val_idx]
                 y_train, y_val = y_train_val[train_idx], y_train_val[val_idx]
                 
@@ -239,9 +243,9 @@ class ClassificationTuner:
                 
                 # Convert to tensors
                 X_train_tensor = torch.tensor(X_train_scaled, dtype=torch.float32)
-                y_train_tensor = torch.tensor(y_train, dtype=torch.long)
+                y_train_tensor = torch.tensor(y_train, dtype=torch.float32).unsqueeze(-1)
                 X_val_tensor = torch.tensor(X_val_scaled, dtype=torch.float32)
-                y_val_tensor = torch.tensor(y_val, dtype=torch.long)
+                y_val_tensor = torch.tensor(y_val, dtype=torch.float32).unsqueeze(-1)
                 
                 # Simulate active learning on the train set
                 train_config = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, 
@@ -264,8 +268,8 @@ class ClassificationTuner:
                     train_loader = DataLoader(train_subset, batch_size=bs, shuffle=True)
                     val_loader = DataLoader(val_subset, batch_size=bs, shuffle=False)
                     
-                    model = OneHiddenMLP(input_dim=X_train_scaled.shape[1], hidden_units=hidden, output_dim=len(np.unique(y_train_val)))
-                    loss_fn = nn.CrossEntropyLoss()
+                    model = OneHiddenMLP(input_dim=X_train_scaled.shape[1], hidden_units=hidden, output_dim=1)
+                    loss_fn = nn.MSELoss()
                     
                     train_passive(model, train_loader, val_loader, loss_fn, train_config)
                     
@@ -279,7 +283,7 @@ class ClassificationTuner:
                             model,
                             x_pool[unlabeled_indices].to(train_config.device),
                             query,
-                            UncertaintySamplingConfig(mode="classification", method=method),
+                            UncertaintySamplingConfig(mode="regression", method=method),
                         )
                     elif strategy == 'sensitivity':
                         from alnn.strategies import sensitivity_sampling
@@ -300,13 +304,13 @@ class ClassificationTuner:
                 final_train_loader = DataLoader(final_train_subset, batch_size=bs, shuffle=True)
                 final_val_loader = DataLoader(val_subset, batch_size=bs, shuffle=False)
                 
-                final_model = OneHiddenMLP(input_dim=X_train_scaled.shape[1], hidden_units=hidden, output_dim=len(np.unique(y_train_val)))
-                loss_fn = nn.CrossEntropyLoss()
+                final_model = OneHiddenMLP(input_dim=X_train_scaled.shape[1], hidden_units=hidden, output_dim=1)
+                loss_fn = nn.MSELoss()
                 
                 train_passive(final_model, final_train_loader, final_val_loader, loss_fn, train_config)
                 
                 # Evaluate on validation set
-                metrics = evaluate_classification(final_model, final_val_loader, device='cpu')
+                metrics = evaluate_regression(final_model, final_val_loader, device='cpu')
                 trial_metrics.append(metrics)
         
         # Average across trials and folds
@@ -325,7 +329,7 @@ class ClassificationTuner:
         print("="*60)
         
         # Load checkpoint if exists
-        checkpoint_file = os.path.join(DATA_DIR, 'passive_cls_checkpoint.json')
+        checkpoint_file = os.path.join(DATA_DIR, 'passive_reg_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
@@ -356,7 +360,7 @@ class ClassificationTuner:
         # Process datasets starting from the resume point
         for dataset_idx, dataset in enumerate(self.datasets):
             if dataset not in self.results['passive']:
-                self.results['passive'][dataset] = {"best_cfg": None, "best_metric": -np.inf, "history": []}
+                self.results['passive'][dataset] = {"best_cfg": None, "best_metric": np.inf, "history": []}
             
             print(f"\n=== Tuning {dataset} ===")
             best_metric = self.results['passive'][dataset]["best_metric"]
@@ -397,13 +401,13 @@ class ClassificationTuner:
                 res.update({"lr": lr, "wd": wd, "hidden": hidden, "bs": bs})
                 hist.append(res)
                 
-                if res['accuracy_mean'] > best_metric:
-                    best_metric = res['accuracy_mean']
+                if res['rmse_mean'] < best_metric:
+                    best_metric = res['rmse_mean']
                     best_cfg = {"lr": lr, "wd": wd, "hidden": hidden, "bs": bs}
                 
                 # Update progress bar
                 pbar.update(1)
-                pbar.set_postfix({'best_acc': f"{best_metric:.4f}"})
+                pbar.set_postfix({'best_rmse': f"{best_metric:.4f}"})
                 
                 # Save checkpoint after each config
                 checkpoint['completed_configs'] += 1
@@ -417,10 +421,10 @@ class ClassificationTuner:
             
             pbar.close()
             self.results['passive'][dataset] = {"best_cfg": best_cfg, "best_metric": best_metric, "history": hist}
-            print(f"Best config for {dataset}: {best_cfg} (accuracy: {best_metric:.4f})")
+            print(f"Best config for {dataset}: {best_cfg} (RMSE: {best_metric:.4f})")
 
         # Save final results
-        with open(os.path.join(DATA_DIR, 'passive_cls_best.json'), 'w') as f:
+        with open(os.path.join(DATA_DIR, 'passive_reg_best.json'), 'w') as f:
             data = nan_to_none(self.results['passive'])
             json.dump(data, f, indent=2)
 
@@ -439,7 +443,7 @@ class ClassificationTuner:
         print("="*60)
         
         # Load checkpoint if exists
-        checkpoint_file = os.path.join(DATA_DIR, 'cls_uncertainty_main_checkpoint.json')
+        checkpoint_file = os.path.join(DATA_DIR, 'reg_uncertainty_main_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
@@ -473,7 +477,7 @@ class ClassificationTuner:
                 json.dump(data, f, indent=2)
 
         # Save final results
-        with open(os.path.join(DATA_DIR, 'cls_uncertainty_results.json'), 'w') as f:
+        with open(os.path.join(DATA_DIR, 'reg_uncertainty_results.json'), 'w') as f:
             data = nan_to_none(self.results['uncertainty'])
             json.dump(data, f, indent=2)
 
@@ -495,7 +499,7 @@ class ClassificationTuner:
         tcfg, acfg_base, hidden_units = best_config
 
         # Load checkpoint if exists
-        checkpoint_file = os.path.join(DATA_DIR, f'cls_uncertainty_{dataset}_{method}_curve_checkpoint.json')
+        checkpoint_file = os.path.join(DATA_DIR, f'reg_uncertainty_{dataset}_{method}_curve_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
@@ -521,9 +525,9 @@ class ClassificationTuner:
                 torch.manual_seed(42 + seed)
                 acfg = ActiveConfig(initial_labeled=acfg_base.initial_labeled, query_batch=acfg_base.query_batch, 
                                   max_labels=max_labels, device=acfg_base.device)
-                res = run_active_classification(dataset_name=dataset, strategy='uncertainty', 
-                                              uncertainty_method=method, hidden_units=hidden_units, 
-                                              train_config=tcfg, active_config=acfg)
+                res = run_active_regression(dataset_name=dataset, strategy='uncertainty', 
+                                          uncertainty_method=method, hidden_units=hidden_units, 
+                                          train_config=tcfg, active_config=acfg)
                 metrics.append(res)
             
             keys = metrics[0].keys()
@@ -549,25 +553,25 @@ class ClassificationTuner:
 
     def tune_hparams_uncertainty(self, dataset: str, method: str, tune_budget: int) -> tuple:
         """Tune hyperparameters for uncertainty-based active learning."""
-        best_acc = -float('inf')
+        best_rmse = float('inf')
         best_config = None
         
         total_configs = len(LR) * len(WD) * len(HIDDEN) * len(BS) * len(INITS) * len(QUERIES)
         
         # Load checkpoint if exists
-        checkpoint_file = os.path.join(DATA_DIR, f'cls_uncertainty_{dataset}_{method}_checkpoint.json')
+        checkpoint_file = os.path.join(DATA_DIR, f'reg_uncertainty_{dataset}_{method}_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
             print(f"Resuming hyperparameter tuning from checkpoint: {checkpoint['completed_configs']} configs completed")
-            best_acc = checkpoint.get('best_acc', -float('inf'))
+            best_rmse = checkpoint.get('best_rmse', float('inf'))
             serialized_config = checkpoint.get('best_config', None)
             best_config = None
             if serialized_config is not None:
                 best_config = self._deserialize_config(serialized_config)
             completed_configs = checkpoint['completed_configs']
         else:
-            checkpoint = {'completed_configs': 0, 'best_acc': -float('inf'), 'best_config': None}
+            checkpoint = {'completed_configs': 0, 'best_rmse': float('inf'), 'best_config': None}
             completed_configs = 0
             print("Starting fresh hyperparameter tuning")
         
@@ -586,21 +590,21 @@ class ClassificationTuner:
             
             # Evaluate this configuration using CV
             metrics = self.evaluate_config_cv_active(dataset, 'uncertainty', method, lr, wd, hidden, bs, init, query, tune_budget)
-            avg_acc = metrics['accuracy_mean']
+            avg_rmse = metrics['rmse_mean']
             
-            if avg_acc > best_acc:
-                best_acc = avg_acc
+            if avg_rmse < best_rmse:
+                best_rmse = avg_rmse
                 train_cfg = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20, device='cpu')
                 active_cfg = ActiveConfig(initial_labeled=init, query_batch=query, max_labels=tune_budget, device='cpu')
                 best_config = (train_cfg, active_cfg, hidden)
             
             # Update progress bar
             pbar.update(1)
-            pbar.set_postfix({'best_acc': f"{best_acc:.4f}"})
+            pbar.set_postfix({'best_rmse': f"{best_rmse:.4f}"})
             
             # Save checkpoint after each config
             checkpoint['completed_configs'] = config_idx + 1
-            checkpoint['best_acc'] = best_acc
+            checkpoint['best_rmse'] = best_rmse
             if best_config is not None:
                 checkpoint['best_config'] = self._serialize_config(best_config[0], best_config[1], best_config[2])
             with open(checkpoint_file, 'w') as f:
@@ -615,7 +619,7 @@ class ClassificationTuner:
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
         
-        print(f"Best config for {dataset}-{method}: accuracy={best_acc:.4f}")
+        print(f"Best config for {dataset}-{method}: RMSE={best_rmse:.4f}")
         return best_config
 
     def run_sensitivity_tuning(self):
@@ -625,7 +629,7 @@ class ClassificationTuner:
         print("="*60)
         
         # Load checkpoint if exists
-        checkpoint_file = os.path.join(DATA_DIR, 'cls_sensitivity_main_checkpoint.json')
+        checkpoint_file = os.path.join(DATA_DIR, 'reg_sensitivity_main_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
@@ -655,7 +659,7 @@ class ClassificationTuner:
                 json.dump(data, f, indent=2)
 
         # Save final results
-        with open(os.path.join(DATA_DIR, 'cls_sensitivity_results.json'), 'w') as f:
+        with open(os.path.join(DATA_DIR, 'reg_sensitivity_results.json'), 'w') as f:
             data = nan_to_none(self.results['sensitivity'])
             json.dump(data, f, indent=2)
 
@@ -677,7 +681,7 @@ class ClassificationTuner:
         tcfg, acfg_base, hidden_units = best_config
 
         # Load checkpoint if exists
-        checkpoint_file = os.path.join(DATA_DIR, f'cls_sensitivity_{dataset}_curve_checkpoint.json')
+        checkpoint_file = os.path.join(DATA_DIR, f'reg_sensitivity_{dataset}_curve_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
@@ -703,8 +707,8 @@ class ClassificationTuner:
                 torch.manual_seed(42 + seed)
                 acfg = ActiveConfig(initial_labeled=acfg_base.initial_labeled, query_batch=acfg_base.query_batch, 
                                   max_labels=max_labels, device=acfg_base.device)
-                res = run_active_classification(dataset_name=dataset, strategy='sensitivity', 
-                                              hidden_units=hidden_units, train_config=tcfg, active_config=acfg)
+                res = run_active_regression(dataset_name=dataset, strategy='sensitivity', 
+                                          hidden_units=hidden_units, train_config=tcfg, active_config=acfg)
                 metrics.append(res)
             
             keys = metrics[0].keys()
@@ -730,25 +734,25 @@ class ClassificationTuner:
 
     def tune_hparams_sensitivity(self, dataset: str, tune_budget: int) -> tuple:
         """Tune hyperparameters for sensitivity-based active learning."""
-        best_acc = -float('inf')
+        best_rmse = float('inf')
         best_config = None
         
         total_configs = len(LR) * len(WD) * len(HIDDEN) * len(BS) * len(INITS) * len(QUERIES)
         
         # Load checkpoint if exists
-        checkpoint_file = os.path.join(DATA_DIR, f'cls_sensitivity_{dataset}_checkpoint.json')
+        checkpoint_file = os.path.join(DATA_DIR, f'reg_sensitivity_{dataset}_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
             print(f"Resuming hyperparameter tuning from checkpoint: {checkpoint['completed_configs']} configs completed")
-            best_acc = checkpoint.get('best_acc', -float('inf'))
+            best_rmse = checkpoint.get('best_rmse', float('inf'))
             serialized_config = checkpoint.get('best_config', None)
             best_config = None
             if serialized_config is not None:
                 best_config = self._deserialize_config(serialized_config)
             completed_configs = checkpoint['completed_configs']
         else:
-            checkpoint = {'completed_configs': 0, 'best_acc': -float('inf'), 'best_config': None}
+            checkpoint = {'completed_configs': 0, 'best_rmse': float('inf'), 'best_config': None}
             completed_configs = 0
             print("Starting fresh hyperparameter tuning")
         
@@ -767,21 +771,21 @@ class ClassificationTuner:
             
             # Evaluate this configuration using CV
             metrics = self.evaluate_config_cv_active(dataset, 'sensitivity', '', lr, wd, hidden, bs, init, query, tune_budget)
-            avg_acc = metrics['accuracy_mean']
+            avg_rmse = metrics['rmse_mean']
             
-            if avg_acc > best_acc:
-                best_acc = avg_acc
+            if avg_rmse < best_rmse:
+                best_rmse = avg_rmse
                 train_cfg = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20, device='cpu')
                 active_cfg = ActiveConfig(initial_labeled=init, query_batch=query, max_labels=tune_budget, device='cpu')
                 best_config = (train_cfg, active_cfg, hidden)
             
             # Update progress bar
             pbar.update(1)
-            pbar.set_postfix({'best_acc': f"{best_acc:.4f}"})
+            pbar.set_postfix({'best_rmse': f"{best_rmse:.4f}"})
             
             # Save checkpoint after each config
             checkpoint['completed_configs'] = config_idx + 1
-            checkpoint['best_acc'] = best_acc
+            checkpoint['best_rmse'] = best_rmse
             if best_config is not None:
                 checkpoint['best_config'] = self._serialize_config(best_config[0], best_config[1], best_config[2])
             with open(checkpoint_file, 'w') as f:
@@ -796,7 +800,7 @@ class ClassificationTuner:
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
         
-        print(f"Best config for {dataset}-sensitivity: accuracy={best_acc:.4f}")
+        print(f"Best config for {dataset}-sensitivity: RMSE={best_rmse:.4f}")
         return best_config
 
     def plot_results(self):
@@ -826,25 +830,25 @@ class ClassificationTuner:
         for dataset in self.datasets:
             if dataset in self.results['passive']:
                 best_idx = None
-                best_acc = -np.inf
+                best_rmse = np.inf
                 for i, h in enumerate(self.results['passive'][dataset]['history']):
-                    if h['accuracy_mean'] > best_acc:
-                        best_acc = h['accuracy_mean']
+                    if h['rmse_mean'] < best_rmse:
+                        best_rmse = h['rmse_mean']
                         best_idx = i
                 
                 datasets_plot.append(dataset)
-                means_plot.append(self.results['passive'][dataset]['history'][best_idx]['accuracy_mean'])
-                stds_plot.append(self.results['passive'][dataset]['history'][best_idx]['accuracy_std'])
+                means_plot.append(self.results['passive'][dataset]['history'][best_idx]['rmse_mean'])
+                stds_plot.append(self.results['passive'][dataset]['history'][best_idx]['rmse_std'])
 
         plt.errorbar(datasets_plot, means_plot, yerr=stds_plot, fmt='o', capsize=5, capthick=2)
-        plt.ylabel('Accuracy (best ± std)')
-        plt.title('Passive Classification Best Accuracy (CV + Multiple Trials)')
+        plt.ylabel('RMSE (best ± std)')
+        plt.title('Passive Regression Best RMSE (CV + Multiple Trials)')
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
-        plt.savefig(os.path.join(FIGURES_DIR, 'passive_cls_best_accuracy.png'), dpi=200)
+        plt.savefig(os.path.join(FIGURES_DIR, 'passive_reg_best_rmse.png'), dpi=200)
         plt.show()
 
-        print(f'\nSaved passive classification tuning results to {FIGURES_DIR}')
+        print(f'\nSaved passive regression tuning results to {FIGURES_DIR}')
         print(f'Used {N_TRIALS} trials × {N_FOLDS} folds = {N_TRIALS * N_FOLDS} evaluations per config')
 
     def plot_uncertainty_results(self):
@@ -862,7 +866,7 @@ class ClassificationTuner:
     def run_all(self):
         """Run all three methods: passive, uncertainty, and sensitivity."""
         print("="*80)
-        print("COMBINED CLASSIFICATION HYPERPARAMETER TUNING")
+        print("COMBINED REGRESSION HYPERPARAMETER TUNING")
         print("="*80)
         print(f"Datasets: {self.datasets}")
         print(f"Methods: Passive, Uncertainty-based, Sensitivity-based")
@@ -888,8 +892,8 @@ class ClassificationTuner:
 
 
 def main():
-    """Main function to run the combined classification tuning."""
-    parser = argparse.ArgumentParser(description='Combined Classification Hyperparameter Tuning')
+    """Main function to run the combined regression tuning."""
+    parser = argparse.ArgumentParser(description='Combined Regression Hyperparameter Tuning')
     parser.add_argument('--datasets', nargs='+', default=DATASETS, 
                        help='Datasets to use for tuning')
     parser.add_argument('--method', choices=['passive', 'uncertainty', 'sensitivity', 'all'], 
@@ -898,7 +902,7 @@ def main():
     args = parser.parse_args()
     
     # Create tuner instance
-    tuner = ClassificationTuner(datasets=args.datasets)
+    tuner = RegressionTuner(datasets=args.datasets)
     
     # Run specified method(s)
     if args.method == 'passive':
@@ -911,7 +915,7 @@ def main():
         tuner.run_all()
     
     # Always plot results
-    # tuner.plot_results()
+    tuner.plot_results()
 
 
 if __name__ == "__main__":
