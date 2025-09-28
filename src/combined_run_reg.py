@@ -258,13 +258,12 @@ class RegressionTuner:
                 
                 x_pool = torch.tensor(X_train_scaled, dtype=torch.float32)
                 y_pool = y_train_tensor.clone()
-                val_subset = None
+                val_subset = TensorDataset(X_val_tensor, y_val_tensor)
                 
                 # Active learning loop
                 while labeled_indices.numel() < min(budget, num_train):
                     # Train model on current labeled set
                     train_subset = TensorDataset(x_pool[labeled_indices], y_pool[labeled_indices])
-                    val_subset = TensorDataset(X_val_tensor, y_val_tensor)
                     
                     train_loader = DataLoader(train_subset, batch_size=bs, shuffle=True)
                     val_loader = DataLoader(val_subset, batch_size=bs, shuffle=False)
