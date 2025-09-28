@@ -44,30 +44,30 @@ DATA_DIR = os.path.join('..', 'data')
 os.makedirs(FIGURES_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# DATASETS = ['diabetes', 'linnerud', 'california']
-# METHODS = ['entropy', 'margin', 'least_confidence']
-# LR = [3e-3, 1e-2, 3e-2]  # More conservative LR range for regression
-# WD = [0.0, 1e-5, 1e-4]
-# HIDDEN = [32, 64, 128]
-# BS = [32, 64]
-# BUDGETS = [40, 80, 120, 160, 200]
-# N_TRIALS = 5  # Number of random seeds for each config
-# N_FOLDS = 5  # Number of CV folds
-# INITS = [10, 20, 40]
-# QUERIES = [5, 10, 20]
-
-
 DATASETS = ['diabetes', 'linnerud', 'california']
 METHODS = ['entropy', 'margin', 'least_confidence']
-LR = [3e-3]  # More conservative LR range for regression
-WD = [1e-4]
-HIDDEN = [32]
-BS = [32]
-BUDGETS = [40]
+LR = [3e-3, 1e-2, 3e-2]  # More conservative LR range for regression
+WD = [0.0, 1e-5, 1e-4]
+HIDDEN = [64]
+BS = [64]
+BUDGETS = [40, 80, 120, 160, 200]
 N_TRIALS = 5  # Number of random seeds for each config
 N_FOLDS = 5  # Number of CV folds
-INITS = [10]
-QUERIES = [5]
+INITS = [10, 20, 40]
+QUERIES = [5, 10, 20]
+
+
+# DATASETS = ['diabetes', 'linnerud', 'california']
+# METHODS = ['entropy', 'margin', 'least_confidence']
+# LR = [3e-3]  # More conservative LR range for regression
+# WD = [1e-4]
+# HIDDEN = [32]
+# BS = [32]
+# BUDGETS = [40]
+# N_TRIALS = 5  # Number of random seeds for each config
+# N_FOLDS = 5  # Number of CV folds
+# INITS = [10]
+# QUERIES = [5]
 
 def nan_to_none(obj):
     if isinstance(obj, float) and math.isnan(obj):
@@ -258,6 +258,7 @@ class RegressionTuner:
                 
                 x_pool = torch.tensor(X_train_scaled, dtype=torch.float32)
                 y_pool = y_train_tensor.clone()
+                val_subset = None
                 
                 # Active learning loop
                 while labeled_indices.numel() < min(budget, num_train):
@@ -875,7 +876,7 @@ class RegressionTuner:
         print("="*80)
         
         # Run passive learning
-        self.run_passive_tuning()
+        # self.run_passive_tuning()
         
         # Run uncertainty-based active learning
         self.run_uncertainty_tuning()
@@ -905,9 +906,9 @@ def main():
     tuner = RegressionTuner(datasets=args.datasets)
     
     # Run specified method(s)
-    if args.method == 'passive':
-        tuner.run_passive_tuning()
-    elif args.method == 'uncertainty':
+    # if args.method == 'passive':
+    #     tuner.run_passive_tuning()
+    if args.method == 'uncertainty':
         tuner.run_uncertainty_tuning()
     elif args.method == 'sensitivity':
         tuner.run_sensitivity_tuning()
