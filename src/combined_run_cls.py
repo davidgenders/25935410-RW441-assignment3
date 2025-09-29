@@ -323,6 +323,12 @@ class ClassificationTuner:
         print("\n" + "="*60)
         print("PASSIVE LEARNING HYPERPARAMETER TUNING")
         print("="*60)
+
+        if os.path.exists(os.path.join(DATA_DIR, 'passive_cls_best.json')):
+            with open(os.path.join(DATA_DIR, 'passive_cls_best.json'), 'r') as f:
+                self.results['passive'] = json.load(f)
+                print("Loaded best results from file")
+                return
         
         # Load checkpoint if exists
         checkpoint_file = os.path.join(DATA_DIR, 'passive_cls_checkpoint.json')
@@ -437,6 +443,12 @@ class ClassificationTuner:
         print("\n" + "="*60)
         print("UNCERTAINTY-BASED ACTIVE LEARNING HYPERPARAMETER TUNING")
         print("="*60)
+
+        if os.path.exists(os.path.join(DATA_DIR, 'cls_uncertainty_results.json')):
+            with open(os.path.join(DATA_DIR, 'cls_uncertainty_results.json'), 'r') as f:
+                self.results['uncertainty'] = json.load(f)
+            print("Loaded best results from file")
+            return
         
         # Load checkpoint if exists
         checkpoint_file = os.path.join(DATA_DIR, 'cls_uncertainty_main_checkpoint.json')
@@ -623,6 +635,12 @@ class ClassificationTuner:
         print("\n" + "="*60)
         print("SENSITIVITY-BASED ACTIVE LEARNING HYPERPARAMETER TUNING")
         print("="*60)
+
+        if os.path.exists(os.path.join(DATA_DIR, 'cls_sensitivity_results.json')):
+            with open(os.path.join(DATA_DIR, 'cls_sensitivity_results.json'), 'r') as f:
+                self.results['sensitivity'] = json.load(f)
+            print("Loaded best results from file")
+            return
         
         # Load checkpoint if exists
         checkpoint_file = os.path.join(DATA_DIR, 'cls_sensitivity_main_checkpoint.json')
