@@ -464,30 +464,29 @@ class ClassificationTuner:
 
         start_time = time.time()
 
+        # in run_uncertainty_tuning(...)
         for dataset_idx, dataset in enumerate(self.datasets):
             if dataset in self.results['uncertainty']:
                 print(f"\n=== Skipping {dataset} (already completed) ===")
                 continue
-                
+
             print(f"\n=== Processing {dataset} ===")
             self.results['uncertainty'][dataset] = {}
-            
+
             for method in METHODS:
                 print(f"\n--- Method: {method} ---")
-                curve = self.evaluate_curve_uncertainty(dataset, method, BUDGETS)
-                self.results['uncertainty'][dataset][method] = curve
-            
-            # Save checkpoint after each dataset
+                result = self.evaluate_curve_uncertainty(dataset, method, BUDGETS)
+                # result contains: best_cfg, best_metric, curve
+                self.results['uncertainty'][dataset][method] = result
+
             checkpoint['completed_datasets'] += 1
             checkpoint['results'] = self.results['uncertainty']
             with open(checkpoint_file, 'w') as f:
-                data = nan_to_none(checkpoint)
-                json.dump(data, f, indent=2)
+                json.dump(nan_to_none(checkpoint), f, indent=2)
 
-        # Save final results
         with open(os.path.join(DATA_DIR, 'cls_uncertainty_results.json'), 'w') as f:
-            data = nan_to_none(self.results['uncertainty'])
-            json.dump(data, f, indent=2)
+            json.dump(nan_to_none(self.results['uncertainty']), f, indent=2)
+
 
         # Clean up checkpoint file
         if os.path.exists(checkpoint_file):
@@ -498,66 +497,82 @@ class ClassificationTuner:
         print(f'\nSaved figures and results to {DATA_DIR}')
         print(f'Used {N_TRIALS} trials per config')
 
-    def evaluate_curve_uncertainty(self, dataset: str, method: str, budgets: List[int]) -> Dict[int, Dict[str, float]]:
-        """Evaluate uncertainty-based active learning curve using best hyperparameters."""
+    # in evaluate_curve_uncertainty(...)
+    def evaluate_curve_uncertainty(self, dataset: str, method: str, budgets: List[int]) -> Dict:
         tune_budget = sorted(budgets)[len(budgets)//2]
-        
-        # First, find best hyperparameters for this method
-        best_config = self.tune_hparams_uncertainty(dataset, method, tune_budget)
+
+        # get best config and best acc
+        best_config, best_acc = self.tune_hparams_uncertainty(dataset, method, tune_budget)
         tcfg, acfg_base, hidden_units = best_config
 
-        # Load checkpoint if exists
         checkpoint_file = os.path.join(DATA_DIR, f'cls_uncertainty_{dataset}_{method}_curve_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
-            print(f"Resuming curve evaluation from checkpoint: {len(checkpoint['results'])} budgets completed")
-            results = checkpoint['results']
+            print(f"Resuming curve evaluation from checkpoint: {len(checkpoint.get('curve', {}))} budgets completed")
+            results = {
+                'best_cfg': checkpoint.get('best_cfg'),
+                'best_metric': checkpoint.get('best_metric', best_acc),
+                'curve': checkpoint.get('curve', {})
+            }
         else:
-            checkpoint = {'results': {}}
-            results = {}
+            checkpoint = {}
+            results = {
+                'best_cfg': self._serialize_config(tcfg, acfg_base, hidden_units),
+                'best_metric': float(best_acc),
+                'curve': {}
+            }
             print("Starting fresh curve evaluation")
-        
-        # Create progress bar
-        pbar = tqdm(total=len(budgets), desc=f"Curve {dataset}-{method}", 
-                    initial=len(results), position=0, leave=True)
-        
+
+        pbar = tqdm(total=len(budgets), desc=f"Curve {dataset}-{method}",
+                    initial=len(results['curve']), position=0, leave=True)
+
         for max_labels in budgets:
-            if str(max_labels) in results:
+            if str(max_labels) in results['curve']:
                 pbar.update(1)
                 continue
-                
+
             print(f'Evaluating {dataset}-{method} at budget {max_labels}')
             metrics = []
             for seed in range(N_TRIALS):
                 torch.manual_seed(42 + seed)
-                acfg = ActiveConfig(initial_labeled=acfg_base.initial_labeled, query_batch=acfg_base.query_batch, 
-                                  max_labels=max_labels, device=acfg_base.device)
-                res = run_active_classification(dataset_name=dataset, strategy='uncertainty', 
-                                              uncertainty_method=method, hidden_units=hidden_units, 
-                                              train_config=tcfg, active_config=acfg)
+                acfg = ActiveConfig(
+                    initial_labeled=acfg_base.initial_labeled,
+                    query_batch=acfg_base.query_batch,
+                    max_labels=max_labels,
+                    device=acfg_base.device
+                )
+                res = run_active_classification(
+                    dataset_name=dataset,
+                    strategy='uncertainty',
+                    uncertainty_method=method,
+                    hidden_units=hidden_units,
+                    train_config=tcfg,
+                    active_config=acfg
+                )
                 metrics.append(res)
-            
+
             keys = metrics[0].keys()
-            results[str(max_labels)] = {f'{k}_mean': float(np.mean([m[k] for m in metrics])) for k in keys}
-            results[str(max_labels)].update({f'{k}_std': float(np.std([m[k] for m in metrics], ddof=1)) for k in keys})
-            
-            # Update progress bar
+            results['curve'][str(max_labels)] = {
+                **{f'{k}_mean': float(np.mean([m[k] for m in metrics])) for k in keys},
+                **{f'{k}_std': float(np.std([m[k] for m in metrics], ddof=1)) for k in keys}
+            }
+
             pbar.update(1)
-            
-            # Save checkpoint after each budget
-            checkpoint['results'] = results
+
+            checkpoint = {
+                'best_cfg': results['best_cfg'],
+                'best_metric': results['best_metric'],
+                'curve': results['curve']
+            }
             with open(checkpoint_file, 'w') as f:
-                data = nan_to_none(checkpoint)
-                json.dump(data, f, indent=2)
-        
+                json.dump(nan_to_none(checkpoint), f, indent=2)
+
         pbar.close()
-        
-        # Clean up checkpoint file
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
-        
-        return {int(k): v for k, v in results.items()}
+
+        return results  # contains best_cfg, best_metric, curve
 
     def tune_hparams_uncertainty(self, dataset: str, method: str, tune_budget: int) -> tuple:
         """Tune hyperparameters for uncertainty-based active learning."""
@@ -628,7 +643,7 @@ class ClassificationTuner:
             os.remove(checkpoint_file)
         
         print(f"Best config for {dataset}-{method}: accuracy={best_acc:.4f}")
-        return best_config
+        return best_config, best_acc
 
     def run_sensitivity_tuning(self):
         """Run sensitivity-based active learning hyperparameter tuning."""
@@ -656,26 +671,25 @@ class ClassificationTuner:
 
         start_time = time.time()
 
+        # in run_sensitivity_tuning(...)
         for dataset_idx, dataset in enumerate(self.datasets):
             if dataset in self.results['sensitivity']:
                 print(f"\n=== Skipping {dataset} (already completed) ===")
                 continue
-                
+
             print(f"\n=== Processing {dataset} ===")
-            curve = self.evaluate_curve_sensitivity(dataset, BUDGETS)
-            self.results['sensitivity'][dataset] = curve
-            
-            # Save checkpoint after each dataset
+            result = self.evaluate_curve_sensitivity(dataset, BUDGETS)
+            # result contains: best_cfg, best_metric, curve
+            self.results['sensitivity'][dataset] = result
+
             checkpoint['completed_datasets'] += 1
             checkpoint['results'] = self.results['sensitivity']
             with open(checkpoint_file, 'w') as f:
-                data = nan_to_none(checkpoint)
-                json.dump(data, f, indent=2)
+                json.dump(nan_to_none(checkpoint), f, indent=2)
 
-        # Save final results
         with open(os.path.join(DATA_DIR, 'cls_sensitivity_results.json'), 'w') as f:
-            data = nan_to_none(self.results['sensitivity'])
-            json.dump(data, f, indent=2)
+            json.dump(nan_to_none(self.results['sensitivity']), f, indent=2)
+
 
         # Clean up checkpoint file
         if os.path.exists(checkpoint_file):
@@ -686,65 +700,81 @@ class ClassificationTuner:
         print(f'\nSaved figures and results to {DATA_DIR}')
         print(f'Used {N_TRIALS} trials per config')
 
-    def evaluate_curve_sensitivity(self, dataset: str, budgets: List[int]) -> Dict[int, Dict[str, float]]:
-        """Evaluate sensitivity-based active learning curve using best hyperparameters."""
+    # in evaluate_curve_sensitivity(...)
+    def evaluate_curve_sensitivity(self, dataset: str, budgets: List[int]) -> Dict:
         tune_budget = sorted(budgets)[len(budgets)//2]
-        
-        # First, find best hyperparameters
-        best_config = self.tune_hparams_sensitivity(dataset, tune_budget)
+
+        best_config, best_acc = self.tune_hparams_sensitivity(dataset, tune_budget)
         tcfg, acfg_base, hidden_units = best_config
 
-        # Load checkpoint if exists
         checkpoint_file = os.path.join(DATA_DIR, f'cls_sensitivity_{dataset}_curve_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
-            print(f"Resuming curve evaluation from checkpoint: {len(checkpoint['results'])} budgets completed")
-            results = checkpoint['results']
+            print(f"Resuming curve evaluation from checkpoint: {len(checkpoint.get('curve', {}))} budgets completed")
+            results = {
+                'best_cfg': checkpoint.get('best_cfg'),
+                'best_metric': checkpoint.get('best_metric', best_acc),
+                'curve': checkpoint.get('curve', {})
+            }
         else:
-            checkpoint = {'results': {}}
-            results = {}
+            checkpoint = {}
+            results = {
+                'best_cfg': self._serialize_config(tcfg, acfg_base, hidden_units),
+                'best_metric': float(best_acc),
+                'curve': {}
+            }
             print("Starting fresh curve evaluation")
-        
-        # Create progress bar
-        pbar = tqdm(total=len(budgets), desc=f"Curve {dataset}-sensitivity", 
-                    initial=len(results), position=0, leave=True)
-        
+
+        pbar = tqdm(total=len(budgets), desc=f"Curve {dataset}-sensitivity",
+                    initial=len(results['curve']), position=0, leave=True)
+
         for max_labels in budgets:
-            if str(max_labels) in results:
+            if str(max_labels) in results['curve']:
                 pbar.update(1)
                 continue
-                
+
             print(f'Evaluating {dataset}-sensitivity at budget {max_labels}')
             metrics = []
             for seed in range(N_TRIALS):
                 torch.manual_seed(42 + seed)
-                acfg = ActiveConfig(initial_labeled=acfg_base.initial_labeled, query_batch=acfg_base.query_batch, 
-                                  max_labels=max_labels, device=acfg_base.device)
-                res = run_active_classification(dataset_name=dataset, strategy='sensitivity', 
-                                              hidden_units=hidden_units, train_config=tcfg, active_config=acfg)
+                acfg = ActiveConfig(
+                    initial_labeled=acfg_base.initial_labeled,
+                    query_batch=acfg_base.query_batch,
+                    max_labels=max_labels,
+                    device=acfg_base.device
+                )
+                res = run_active_classification(
+                    dataset_name=dataset,
+                    strategy='sensitivity',
+                    hidden_units=hidden_units,
+                    train_config=tcfg,
+                    active_config=acfg
+                )
                 metrics.append(res)
-            
+
             keys = metrics[0].keys()
-            results[str(max_labels)] = {f'{k}_mean': float(np.mean([m[k] for m in metrics])) for k in keys}
-            results[str(max_labels)].update({f'{k}_std': float(np.std([m[k] for m in metrics], ddof=1)) for k in keys})
-            
-            # Update progress bar
+            results['curve'][str(max_labels)] = {
+                **{f'{k}_mean': float(np.mean([m[k] for m in metrics])) for k in keys},
+                **{f'{k}_std': float(np.std([m[k] for m in metrics], ddof=1)) for k in keys}
+            }
+
             pbar.update(1)
-            
-            # Save checkpoint after each budget
-            checkpoint['results'] = results
+
+            checkpoint = {
+                'best_cfg': results['best_cfg'],
+                'best_metric': results['best_metric'],
+                'curve': results['curve']
+            }
             with open(checkpoint_file, 'w') as f:
-                data = nan_to_none(checkpoint)
-                json.dump(data, f, indent=2)
-        
+                json.dump(nan_to_none(checkpoint), f, indent=2)
+
         pbar.close()
-        
-        # Clean up checkpoint file
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
-        
-        return {int(k): v for k, v in results.items()}
+
+        return results
+
 
     def tune_hparams_sensitivity(self, dataset: str, tune_budget: int) -> tuple:
         """Tune hyperparameters for sensitivity-based active learning."""
@@ -815,7 +845,7 @@ class ClassificationTuner:
             os.remove(checkpoint_file)
         
         print(f"Best config for {dataset}-sensitivity: accuracy={best_acc:.4f}")
-        return best_config
+        return best_config, best_acc
 
     def plot_results(self):
         """Plot and save results for all methods."""

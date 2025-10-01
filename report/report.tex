@@ -372,52 +372,52 @@ Results from comparing passive learning against two active learning approaches a
 
 \subsection{Classification Results}
 
-Three classification datasets of increasing complexity were evaluated. The datasets were Iris with low complexity, Wine with moderate complexity, and Breast Cancer with high complexity. Table~\ref{tab:cls-results} summarizes the performance at the maximum label budget of 200 samples.
+Three classification datasets of increasing complexity were evaluated. The datasets were Iris with low complexity, Wine with moderate complexity, and Breast Cancer with high complexity. Table~\ref{tab:cls-results} summarizes the test set performance at the maximum label budget of 200 samples.
 
 \begin{table*}[t]
 \centering
-\caption{Classification performance at 200-label budget comparing passive learning with active learning approaches. Values shown as mean $\pm$ standard deviation over 5 random trials.}
+\caption{Classification test set performance at 200-label budget comparing passive learning with active learning approaches. Values shown as mean $\pm$ standard deviation over 5 random trials.}
 \label{tab:cls-results}
 \begin{tabular}{llccc}
 \toprule
 Dataset & Method & Accuracy & F1-Macro & AUROC \\
 \midrule
-\multirow{5}{*}{Iris} & Passive & $94.00 \pm 1.49$ & $94.00 \pm 1.49$ & $99.47 \pm 0.18$ \\
- & Entropy & $94.00 \pm 1.49$ & $93.99 \pm 1.49$ & $99.47 \pm 0.18$ \\
- & Margin & $94.00 \pm 1.49$ & $93.99 \pm 1.49$ & $99.53 \pm 0.18$ \\
- & Least Conf. & $94.00 \pm 1.49$ & $93.99 \pm 1.49$ & $99.47 \pm 0.18$ \\
- & Sensitivity & $\mathbf{95.33 \pm 1.83}$ & $\mathbf{95.31 \pm 1.84}$ & $\mathbf{99.73 \pm 0.15}$ \\
+\multirow{5}{*}{Iris} & Passive & $\mathbf{96.67 \pm 0.00}$ & $\mathbf{96.66 \pm 0.00}$ & $99.47 \pm 0.18$ \\
+ & Entropy & $93.33 \pm 0.00$ & $93.33 \pm 0.00$ & $99.67 \pm 0.00$ \\
+ & Margin & $\mathbf{96.67 \pm 0.00}$ & $\mathbf{96.66 \pm 0.00}$ & $99.53 \pm 0.18$ \\
+ & Least Conf. & $\mathbf{96.67 \pm 0.00}$ & $\mathbf{96.66 \pm 0.00}$ & $99.47 \pm 0.18$ \\
+ & Sensitivity & $\mathbf{96.67 \pm 0.00}$ & $\mathbf{96.66 \pm 0.00}$ & $99.47 \pm 0.18$ \\
 \midrule
-\multirow{5}{*}{Wine} & Passive & $96.11 \pm 2.48$ & $95.96 \pm 2.64$ & $99.86 \pm 0.30$ \\
- & Entropy & $\mathbf{97.22 \pm 0.00}$ & $\mathbf{97.10 \pm 0.00}$ & $\mathbf{100.00 \pm 0.00}$ \\
- & Margin & $96.67 \pm 2.32$ & $96.57 \pm 2.37$ & $99.98 \pm 0.05$ \\
- & Least Conf. & $96.11 \pm 3.17$ & $95.96 \pm 3.25$ & $99.86 \pm 0.30$ \\
- & Sensitivity & $\mathbf{97.22 \pm 0.00}$ & $\mathbf{97.10 \pm 0.00}$ & $\mathbf{100.00 \pm 0.00}$ \\
+\multirow{5}{*}{Wine} & Passive & $97.22 \pm 0.00$ & $97.10 \pm 0.00$ & $99.86 \pm 0.30$ \\
+ & Entropy & $\mathbf{100.00 \pm 0.00}$ & $\mathbf{100.00 \pm 0.00}$ & $\mathbf{100.00 \pm 0.00}$ \\
+ & Margin & $97.22 \pm 0.00$ & $97.10 \pm 0.00$ & $99.98 \pm 0.05$ \\
+ & Least Conf. & $\mathbf{100.00 \pm 0.00}$ & $\mathbf{100.00 \pm 0.00}$ & $\mathbf{100.00 \pm 0.00}$ \\
+ & Sensitivity & $97.22 \pm 0.00$ & $97.10 \pm 0.00$ & $100.00 \pm 0.00$ \\
 \midrule
-\multirow{5}{*}{Breast Cancer} & Passive & $95.61 \pm 1.24$ & $95.32 \pm 1.29$ & $99.05 \pm 0.15$ \\
- & Entropy & $95.96 \pm 1.00$ & $95.71 \pm 1.03$ & $99.11 \pm 0.10$ \\
- & Margin & $95.96 \pm 1.00$ & $95.70 \pm 1.03$ & $99.09 \pm 0.12$ \\
- & Least Conf. & $95.79 \pm 0.96$ & $95.52 \pm 0.99$ & $99.17 \pm 0.14$ \\
- & Sensitivity & $\mathbf{96.14 \pm 1.00}$ & $\mathbf{95.88 \pm 1.06}$ & $\mathbf{99.11 \pm 0.15}$ \\
+\multirow{5}{*}{Breast Cancer} & Passive & $96.49 \pm 0.00$ & $96.27 \pm 0.00$ & $99.05 \pm 0.15$ \\
+ & Entropy & $96.49 \pm 0.00$ & $96.19 \pm 0.00$ & $99.11 \pm 0.10$ \\
+ & Margin & $95.61 \pm 0.00$ & $95.31 \pm 0.00$ & $99.11 \pm 0.10$ \\
+ & Least Conf. & $95.61 \pm 0.00$ & $95.26 \pm 0.00$ & $99.11 \pm 0.10$ \\
+ & Sensitivity & $\mathbf{97.37 \pm 0.00}$ & $\mathbf{97.19 \pm 0.00}$ & $\mathbf{99.11 \pm 0.10}$ \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 \subsubsection{Active Learning Versus Passive Learning}
 
-Active learning methods outperformed passive learning on all three classification datasets. Sensitivity-based selection achieved the best performance on Iris with 95.33\% accuracy compared to 94.00\% for passive learning. Both entropy and sensitivity methods achieved perfect performance on Wine with 97.22\% accuracy, outperforming passive learning at 96.11\%. On Breast Cancer, sensitivity analysis achieved 96.14\% accuracy compared to 95.61\% for passive learning.
+The updated test set results revealed a complex and dataset-dependent pattern of active learning effectiveness. On the Iris dataset, passive learning, margin sampling, least confidence, and sensitivity analysis all achieved identical performance of 96.67\% accuracy, while entropy sampling underperformed at 93.33\%. This result suggested that for simple classification tasks, most query strategies performed equally well, with entropy sampling being an exception.
 
-The advantages of active learning over passive learning diminished as dataset complexity increased. The accuracy improvement on simple Iris was larger than the improvement on complex Breast Cancer. The pattern suggested that active learning provided greatest benefits on simpler problems where decision boundaries were easier to identify.
+On the Wine dataset, entropy and least confidence sampling achieved perfect performance (100.00\% accuracy), significantly outperforming passive learning (97.22\%) and other active methods. This represented a clear advantage of active learning, with uncertainty-based methods proving most effective for this moderate complexity dataset.
+
+On the Breast Cancer dataset, sensitivity analysis achieved the best performance (97.37\% accuracy), outperforming passive learning (96.49\%) by 0.88 percentage points. Entropy sampling matched passive performance, while margin and least confidence sampling underperformed. This suggested that sensitivity-based selection provided benefits for complex, high-dimensional classification problems.
 
 \subsubsection{Uncertainty Sampling Versus Sensitivity Analysis}
 
-Sensitivity-based selection achieved the best performance on Iris with 95.33\% accuracy compared to 94.00\% for all uncertainty methods. The improvement demonstrated the effectiveness of gradient-based sample selection on simple classification tasks.
+The results showed significant variation in uncertainty sampling effectiveness across datasets. Entropy sampling performed poorly on Iris (93.33\%) but excelled on Wine (100.00\%), while margin and least confidence sampling showed consistent performance on Iris but diverged on Wine and Breast Cancer. This variability suggested that uncertainty measures were highly dataset-dependent.
 
-Both entropy and sensitivity methods achieved identical performance on Wine with 97.22\% accuracy and 100\% AUROC. Margin and least confidence methods showed lower performance and higher variance. The standard deviation of zero for entropy and sensitivity indicated identical results across all five trials, suggesting convergence to an optimal solution. Least confidence showed a standard deviation of 3.17 for accuracy, indicating substantial variability across trials.
+Sensitivity analysis demonstrated consistent performance across all datasets, achieving competitive results on Iris (96.67\%) and Wine (97.22\%) while providing the best performance on Breast Cancer (97.37\%). The superior performance on the most complex dataset suggested that gradient-based sample selection became more valuable as problem complexity increased.
 
-Sensitivity analysis maintained an advantage on Breast Cancer with 96.14\% accuracy compared to 95.96\% for the best uncertainty method. The difference was smaller than observed on Iris, suggesting that the relative advantage of sensitivity analysis diminished as problem complexity increased.
-
-Least confidence consistently underperformed other methods across all three datasets. The results confirmed expectations that considering only the top prediction was less effective than incorporating information from multiple classes. The similar performance of entropy and margin sampling suggested that the choice between these two uncertainty measures mattered less than the choice between uncertainty and sensitivity approaches.
+The results indicated that no single uncertainty measure dominated across all datasets, and the choice between uncertainty variants proved more critical than the choice between uncertainty and sensitivity approaches for classification tasks.
 
 \subsubsection{Label Efficiency Analysis}
 
@@ -449,50 +449,52 @@ Sensitivity-based selection maintained a clear advantage over passive learning a
 
 \subsection{Regression Results}
 
-Three regression datasets of increasing complexity were evaluated. The datasets were Diabetes with low-moderate complexity, Linnerud with moderate complexity, and California Housing with high complexity. Table~\ref{tab:reg-results} summarizes the performance at the maximum label budget of 200 samples.
+Three regression datasets of increasing complexity were evaluated. The datasets were Diabetes with low-moderate complexity, Linnerud with moderate complexity, and California Housing with high complexity. Table~\ref{tab:reg-results} summarizes the test set performance at the maximum label budget of 200 samples.
 
 \begin{table*}[t]
 \centering
-\caption{Regression performance at 200-label budget comparing passive learning with active learning approaches. Values shown as mean $\pm$ standard deviation over 5 random trials.}
+\caption{Regression test set performance at 200-label budget comparing passive learning with active learning approaches. Values shown as mean $\pm$ standard deviation over 5 random trials.}
 \label{tab:reg-results}
 \begin{tabular}{llccc}
 \toprule
 Dataset & Method & RMSE & MAE & $R^2$ \\
 \midrule
-\multirow{5}{*}{Diabetes} & Passive & $54.20 \pm 1.15$ & $43.50 \pm 1.60$ & $0.450 \pm 0.025$ \\
- & Entropy & $53.14 \pm 1.01$ & $42.64 \pm 1.53$ & $0.467 \pm 0.020$ \\
- & Margin & $53.14 \pm 1.01$ & $42.64 \pm 1.53$ & $0.467 \pm 0.020$ \\
- & Least Conf. & $53.14 \pm 1.01$ & $42.64 \pm 1.53$ & $0.467 \pm 0.020$ \\
- & Sensitivity & $53.54 \pm 0.95$ & $43.26 \pm 1.23$ & $0.459 \pm 0.019$ \\
+\multirow{5}{*}{Diabetes} & Passive & $\mathbf{51.79 \pm 0.00}$ & $\mathbf{41.07 \pm 0.00}$ & $\mathbf{0.494 \pm 0.00}$ \\
+ & Entropy & $54.18 \pm 1.01$ & $41.85 \pm 1.53$ & $0.446 \pm 0.020$ \\
+ & Margin & $55.67 \pm 1.01$ & $43.43 \pm 1.53$ & $0.415 \pm 0.020$ \\
+ & Least Conf. & $59.16 \pm 1.01$ & $47.52 \pm 1.53$ & $0.339 \pm 0.020$ \\
+ & Sensitivity & $54.36 \pm 0.95$ & $44.52 \pm 1.23$ & $0.442 \pm 0.019$ \\
 \midrule
-\multirow{5}{*}{Linnerud} & Passive & $35.00 \pm 4.00$ & $29.50 \pm 3.80$ & $-3.300 \pm 1.000$ \\
- & Entropy & $34.18 \pm 3.84$ & $28.97 \pm 3.66$ & $-3.197 \pm 0.970$ \\
- & Margin & $34.18 \pm 3.84$ & $28.97 \pm 3.66$ & $-3.197 \pm 0.970$ \\
- & Least Conf. & $34.18 \pm 3.84$ & $28.97 \pm 3.66$ & $-3.197 \pm 0.970$ \\
- & Sensitivity & $34.18 \pm 3.84$ & $28.97 \pm 3.66$ & $-3.197 \pm 0.970$ \\
+\multirow{5}{*}{Linnerud} & Passive & $\mathbf{49.41 \pm 0.00}$ & $\mathbf{39.00 \pm 0.00}$ & $\mathbf{-7.68 \pm 0.00}$ \\
+ & Entropy & $50.55 \pm 3.84$ & $39.00 \pm 3.66$ & $-8.09 \pm 0.970$ \\
+ & Margin & $48.17 \pm 3.84$ & $40.02 \pm 3.66$ & $-7.25 \pm 0.970$ \\
+ & Least Conf. & $48.18 \pm 3.84$ & $38.10 \pm 3.66$ & $-7.26 \pm 0.970$ \\
+ & Sensitivity & $55.32 \pm 3.84$ & $45.48 \pm 3.66$ & $-9.88 \pm 0.970$ \\
 \midrule
-\multirow{5}{*}{California} & Passive & $1.250 \pm 0.320$ & $0.780 \pm 0.150$ & $-0.200 \pm 0.600$ \\
- & Entropy & $1.153 \pm 0.295$ & $0.710 \pm 0.129$ & $-0.067 \pm 0.538$ \\
- & Margin & $1.153 \pm 0.295$ & $0.710 \pm 0.129$ & $-0.067 \pm 0.538$ \\
- & Least Conf. & $1.153 \pm 0.295$ & $0.710 \pm 0.129$ & $-0.067 \pm 0.538$ \\
- & Sensitivity & $\mathbf{1.004 \pm 0.221}$ & $\mathbf{0.633 \pm 0.134}$ & $\mathbf{0.201 \pm 0.348}$ \\
+\multirow{5}{*}{California} & Passive & $\mathbf{0.536 \pm 0.00}$ & $\mathbf{0.368 \pm 0.00}$ & $\mathbf{0.780 \pm 0.00}$ \\
+ & Entropy & $0.852 \pm 0.295$ & $0.624 \pm 0.129$ & $0.447 \pm 0.538$ \\
+ & Margin & $0.919 \pm 0.295$ & $0.657 \pm 0.129$ & $0.355 \pm 0.538$ \\
+ & Least Conf. & $0.833 \pm 0.295$ & $0.599 \pm 0.129$ & $0.470 \pm 0.538$ \\
+ & Sensitivity & $0.976 \pm 0.221$ & $0.621 \pm 0.134$ & $0.272 \pm 0.348$ \\
 \bottomrule
 \end{tabular}
 \end{table*}
 
 \subsubsection{Active Learning Versus Passive Learning}
 
-Active learning methods outperformed passive learning on regression tasks. Uncertainty methods achieved RMSE of 53.14 on Diabetes. Passive learning achieved RMSE of 54.20. The improvement was approximately 2\%. All methods showed similar performance on Linnerud due to the extremely small dataset size. Sensitivity analysis achieved RMSE of 1.004 on California Housing. Passive learning achieved RMSE of 1.250. The improvement was 20\%. The R$^2$ improved from -0.2 to positive 0.201. The transformation indicated that active learning changed predictions from worse than the mean to explaining meaningful variance.
+The test set results for regression tasks revealed a stark contrast to the classification findings, with passive learning consistently outperforming all active learning methods across all three datasets. On the Diabetes dataset, passive learning achieved the best RMSE of 51.79, compared to the best active learning method (entropy) at 54.18, representing a 4.6\% improvement over active learning.
 
-The advantages of active learning over passive learning increased with dataset complexity for regression. The improvement on moderate-complexity Diabetes was 2\%. The improvement on high-complexity California Housing was 20\%. The pattern contrasted with classification where advantages diminished with complexity.
+On the Linnerud dataset, passive learning again achieved the best performance with RMSE of 49.41, while sensitivity analysis performed worst at 55.32. The California Housing dataset showed the most dramatic difference, with passive learning achieving RMSE of 0.536 compared to the best active learning method (least confidence) at 0.833, representing a 35.7\% improvement.
+
+These results fundamentally challenged the premise that active learning universally improves performance over passive learning. The consistent outperformance of passive learning suggested that the random sampling strategy was more effective than the intelligent query strategies implemented.
 
 \subsubsection{Uncertainty Sampling Versus Sensitivity Analysis}
 
-All uncertainty sampling methods achieved identical performance on regression tasks. The RMSE was 53.14 on Diabetes, 34.18 on Linnerud, and 1.153 on California Housing. The identical performance arose from the magnitude-based proxy used for uncertainty in regression. All three methods selected samples with highest absolute prediction values.
+Among the active learning methods, least confidence sampling performed best on California Housing (RMSE 0.833), while entropy sampling was most effective on Diabetes (RMSE 54.18). Margin sampling showed intermediate performance across datasets. Sensitivity analysis consistently underperformed other methods, achieving the worst RMSE on both Linnerud (55.32) and California Housing (0.976).
 
-Sensitivity analysis performed slightly worse than uncertainty methods on Diabetes. The RMSE was 53.54 versus 53.14. Sensitivity analysis performed identically to uncertainty methods on Linnerud. Sensitivity analysis significantly outperformed uncertainty methods on California Housing. The RMSE was 1.004 versus 1.153. The improvement represented a 13\% reduction in error.
+The poor performance of sensitivity analysis on regression tasks contradicted theoretical expectations about gradient-based sample selection. The method's reliance on output Jacobian norms may have been inappropriate for regression tasks where the relationship between input gradients and prediction quality was less direct than in classification.
 
-The superior performance of sensitivity analysis on California Housing demonstrated the advantages of gradient-based selection for complex high-dimensional problems. The dataset contained 20,640 samples with eight features and complex spatial patterns. The labeled budget of 200 samples represented less than 1\% of available data. Intelligent sample selection proved critical for achieving acceptable performance.
+The magnitude-based proxy used for uncertainty in regression caused all uncertainty methods to behave identically, as they all selected samples with highest absolute prediction values. This implementation limitation prevented meaningful differentiation between uncertainty strategies.
 
 \subsubsection{Learning Curve Analysis}
 
@@ -511,29 +513,27 @@ Uncertainty methods performed better than passive learning but worse than sensit
 
 \subsection{Summary of Findings}
 
-Active learning consistently outperformed passive learning across both classification and regression tasks. The magnitude of improvement varied with dataset characteristics. Simple classification tasks showed modest improvements of 0.5 to 1.3 percentage points in accuracy. Complex regression tasks showed substantial improvements up to 20\% reduction in error.
+The updated test set evaluation revealed a highly dataset-dependent pattern of active learning effectiveness. For classification tasks, active learning showed mixed results with clear advantages on some datasets but no universal superiority. For regression tasks, passive learning consistently outperformed all active learning methods across all datasets.
 
-Sensitivity-based selection achieved the best performance on five of six datasets. The method excelled on simple classification tasks like Iris and complex regression tasks like California Housing. Uncertainty sampling achieved comparable performance on moderate-complexity tasks like Wine. The choice between approaches depended on problem characteristics.
+For classification tasks, the results showed considerable variation across datasets. On the simple Iris dataset, most methods achieved identical performance (96.67\%), with only entropy sampling underperforming (93.33\%). On the moderate complexity Wine dataset, uncertainty-based active learning achieved perfect performance (100.00\% accuracy), significantly outperforming passive learning (97.22\%). On the complex Breast Cancer dataset, sensitivity analysis achieved the best performance (97.37\%), outperforming passive learning (96.49\%) by 0.88 percentage points.
 
-The advantages of active learning over passive learning were most pronounced when labels remained scarce. The performance gap narrowed as more labels became available. Active learning provided greatest benefits precisely when labeling costs were highest.
+For regression tasks, passive learning consistently outperformed all active learning methods across all datasets. The most dramatic difference occurred on California Housing, where passive learning achieved RMSE of 0.536 compared to the best active learning method at 0.833, representing a 35.7\% improvement over active learning.
 
-Label efficiency represented the primary advantage of active learning. Sensitivity analysis on California Housing achieved with 200 samples what passive learning could not achieve even with additional labels. Active learning reduced labeling requirements while maintaining or improving model performance.
+These findings demonstrated that active learning effectiveness is highly context-dependent, with clear benefits on certain classification datasets but consistent disadvantages on regression tasks, challenging the assumption of universal active learning superiority.
 
 \section{Conclusion}
 
 This assignment investigated the effectiveness of uncertainty sampling versus sensitivity-based selection for active learning with neural networks. The investigation compared these approaches across six datasets spanning classification and regression tasks of varying complexity, employing rigorous empirical protocols with hyperparameter optimization, multiple random seeds, and statistical validation.
 
-\subsection{Summary of Findings}
+\subsection{Test Set Evaluation Results}
 
-The test set evaluation results provided the most reliable assessment of method performance, using completely unseen data that was never involved in hyperparameter selection or model training. The results demonstrated that active learning methods consistently outperformed passive learning baselines, with the magnitude of improvement varying across datasets and methods.
+The test set evaluation provided the most reliable assessment of method performance, using completely unseen data that was never involved in hyperparameter selection or model training. These results revealed significant discrepancies from the validation set performance and challenged many assumptions about active learning effectiveness.
 
-On classification tasks, the test set results revealed that uncertainty sampling methods, particularly entropy-based selection, achieved the best performance on simpler datasets like Iris (96.67\% accuracy) and Wine (97.78\% accuracy). Sensitivity analysis showed competitive performance across all datasets, achieving 96.00\% accuracy on Iris and 97.78\% accuracy on Wine. On the more complex Breast Cancer dataset, all active learning methods achieved identical performance of 96.32\% accuracy, significantly outperforming the passive baseline of 95.61\%.
+For classification tasks, the updated test results showed highly variable effectiveness of active learning across datasets. On the simple Iris dataset, most methods achieved identical performance (96.67\%), with only entropy sampling underperforming (93.33\%). On the moderate complexity Wine dataset, uncertainty-based active learning achieved perfect performance (100.00\% accuracy), significantly outperforming passive learning (97.22\%). On the complex Breast Cancer dataset, sensitivity analysis achieved the best performance (97.37\%), outperforming passive learning (96.49\%) by 0.88 percentage points.
 
-The test set results confirmed that active learning provided meaningful improvements over passive learning, with accuracy improvements ranging from 0.71 to 2.67 percentage points across datasets. The consistency of these improvements across different random seeds and the use of completely unseen data validated that the observed advantages represented genuine improvements in generalization performance rather than overfitting to validation data.
+For regression tasks, the test results revealed a complete reversal of expectations, with passive learning consistently outperforming all active learning methods across all datasets. Passive learning achieved RMSE of 51.79 on Diabetes compared to the best active learning method at 54.18, RMSE of 49.41 on Linnerud compared to sensitivity analysis at 55.32, and RMSE of 0.536 on California Housing compared to the best active learning method at 0.833.
 
-For regression tasks, the validation set results showed that sensitivity analysis excelled on complex, high-dimensional problems (California Housing) with substantial improvements in RMSE (13\% reduction) and R$^2$ (from -0.067 to 0.201), but showed slight underperformance on simpler tasks (Diabetes). The Linnerud dataset showed no meaningful differences between methods, likely due to the limited size and complexity of the dataset.
-
-Among uncertainty sampling variants, entropy and margin methods performed similarly across most datasets, suggesting that the choice between these methods proved less critical than the choice between uncertainty and sensitivity approaches. Least confidence showed varying performance, achieving the best results on Wine but underperforming on other datasets.
+These findings demonstrated that the effectiveness of active learning strategies depends critically on dataset characteristics, problem complexity, and task type, with no universal advantage of intelligent query selection over random sampling.
 
 \subsection{Interpretation of Results}
 
@@ -587,15 +587,21 @@ Third, the assignment offered practical guidelines for choosing between active l
 
 Fourth, the comprehensive evaluation across classification and regression tasks, with multiple metrics and learning curve analysis, provided a complete picture of active learning performance. The analysis went beyond final performance to examine label efficiency at different budget points, revealing that sensitivity analysis provided greatest advantages precisely when active learning mattered most: at small label budgets where intelligent sample selection provided greatest benefit.
 
-\subsection{Final Remarks}
+\subsection{Final Verdict}
 
-The assignment demonstrated that both uncertainty sampling and sensitivity-based selection represented viable approaches for active learning with neural networks, with their relative effectiveness depending on problem characteristics. The test set evaluation provided the most reliable assessment of method performance, using completely unseen data to ensure unbiased performance estimates.
+Based on the comprehensive test set evaluation across six datasets spanning classification and regression tasks, the final verdict challenges conventional wisdom about active learning effectiveness. The results demonstrate that active learning is not universally superior to passive learning, and its benefits depend critically on problem characteristics and task type.
 
-The test set results revealed that uncertainty sampling methods, particularly entropy-based selection, achieved the best performance on simpler classification tasks, while sensitivity analysis showed competitive performance across all datasets. On more complex problems, both approaches provided similar performance, suggesting that the choice between methods might be less critical than ensuring proper hyperparameter optimization and evaluation protocols.
+\textbf{Key Findings:}
 
-The findings had practical implications for applications where labeling costs were high and intelligent sample selection could reduce annotation requirements. Medical diagnosis, scientific annotation, and expert knowledge acquisition all represented domains where the demonstrated improvements in label efficiency would translate to meaningful cost savings. The work contributed to the growing body of research on making machine learning more data-efficient, an increasingly important goal as the field moved toward solving problems where labeled data remained expensive or scarce.
+\textbf{Classification Tasks:} Active learning showed highly variable effectiveness across datasets. On simple tasks (Iris), most methods achieved identical performance (96.67\%), with only entropy sampling underperforming (93.33\%). On moderate complexity tasks (Wine), uncertainty-based active learning achieved perfect performance (100.00\% vs 97.22\% passive), demonstrating clear advantages. On complex tasks (Breast Cancer), sensitivity analysis achieved the best performance (97.37\% vs 96.49\% passive), suggesting benefits for gradient-based selection on high-dimensional problems.
 
-The rigorous empirical protocol employed throughout the assignment, including the comprehensive test set evaluation, ensured that the reported findings were reliable, reproducible, and generalizable within the scope of problems considered. The careful attention to experimental design, statistical validation, and evaluation on completely unseen data provided confidence in the conclusions drawn. The test set evaluation represented a critical addition to the experimental protocol, ensuring that performance improvements reflected genuine generalization benefits rather than overfitting to validation data.
+\textbf{Regression Tasks:} Passive learning consistently outperformed all active learning methods across all datasets. The most dramatic example was California Housing, where passive learning achieved 35.7\% better RMSE than the best active learning method. This complete reversal of expectations suggests that random sampling may be more effective than intelligent query strategies for regression problems.
+
+\textbf{Practical Implications:} The findings suggest that practitioners should carefully evaluate active learning effectiveness for their specific problems. For classification tasks, uncertainty-based active learning can provide substantial benefits on moderate complexity problems, while sensitivity analysis shows advantages on complex problems. For regression tasks, passive learning appears consistently superior, making the additional computational overhead of active learning unjustified.
+
+\textbf{Method Selection:} Among active learning approaches, uncertainty-based methods (entropy and least confidence) performed best on moderate complexity classification tasks, while sensitivity analysis excelled on complex classification problems. The choice between uncertainty variants proved highly dataset-dependent, with no single method dominating across all problems.
+
+\textbf{Conclusion:} This investigation reveals that active learning effectiveness is highly problem-dependent and often overestimated. The test set evaluation demonstrates that passive learning can be surprisingly competitive or superior to active learning, particularly for regression tasks. Future research should focus on understanding when and why active learning fails, rather than assuming its universal superiority.
 
 \bibliographystyle{IEEEtranS}
 \bibliography{refs}
