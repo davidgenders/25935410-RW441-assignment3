@@ -325,17 +325,16 @@ class RegressionTuner:
         return final_metrics
 
     def run_passive_tuning(self):
-        """Run passive learning hyperparameter tuning."""
-        print("\n" + "="*60)
-        print("PASSIVE LEARNING HYPERPARAMETER TUNING")
-        print("="*60)
+        if os.path.exists(os.path.join(DATA_DIR, 'passive_reg_best.json')):
+            with open(os.path.join(DATA_DIR, 'passive_reg_best.json'), 'r') as f:
+                self.results['passive'] = json.load(f)
+                return
         
         # Load checkpoint if exists
         checkpoint_file = os.path.join(DATA_DIR, 'passive_reg_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
-            print(f"Resuming from checkpoint: {checkpoint.get('completed_configs', 0)} configs completed")
             self.results['passive'] = checkpoint.get('results', {})
             
             # Determine which dataset to resume from
@@ -346,25 +345,20 @@ class RegressionTuner:
             resume_dataset_idx = completed_configs // dataset_configs
             resume_config_idx = completed_configs % dataset_configs
             
-            print(f"Resuming from dataset {resume_dataset_idx} ({self.datasets[resume_dataset_idx] if resume_dataset_idx < len(self.datasets) else 'completed'}), config {resume_config_idx}")
+            print(f"Resuming from checkpoint: {checkpoint.get('completed_configs', 0)}")
             
         else:
             checkpoint = {'completed_configs': 0, 'results': {}}
             self.results['passive'] = {}
             resume_dataset_idx = 0
             resume_config_idx = 0
-            print("Starting fresh run")
-
-        # Calculate total configs
-        total_configs = len(self.datasets) * len(LR) * len(WD) * len(HIDDEN) * len(BS)
-        start_time = time.time()
 
         # Process datasets starting from the resume point
         for dataset_idx, dataset in enumerate(self.datasets):
             if dataset not in self.results['passive']:
                 self.results['passive'][dataset] = {"best_cfg": None, "best_metric": np.inf, "history": []}
             
-            print(f"\n=== Tuning {dataset} ===")
+            print(f"\nTuning {dataset}")
             best_metric = self.results['passive'][dataset]["best_metric"]
             best_cfg = self.results['passive'][dataset]["best_cfg"]
             hist = self.results['passive'][dataset]["history"]
@@ -373,19 +367,16 @@ class RegressionTuner:
             
             # Determine starting point for this dataset
             if dataset_idx < resume_dataset_idx:
-                # This dataset is already completed, skip it
-                print(f"Skipping {dataset} (already completed)")
                 continue
             elif dataset_idx == resume_dataset_idx:
                 # This is the dataset we need to resume from
                 start_config_idx = resume_config_idx
-                print(f"Resuming {dataset} from config {start_config_idx + 1}/{dataset_configs}")
+                print(f"Resuming {dataset} from {start_config_idx + 1}/{dataset_configs}")
             else:
-                # This dataset hasn't been started yet
                 start_config_idx = 0
-                print(f"Starting {dataset} from config 1/{dataset_configs}")
+                print(f"Starting {dataset} from 1/{dataset_configs}")
             
-            # Create progress bar for this dataset
+            # Progress bar
             pbar = tqdm(total=dataset_configs, desc=f"{dataset} configs", 
                         initial=len(hist), position=0, leave=True)
             
@@ -411,7 +402,7 @@ class RegressionTuner:
                 pbar.update(1)
                 pbar.set_postfix({'best_rmse': f"{best_metric:.4f}"})
                 
-                # Save checkpoint after each config
+                # Save checkpoint after each run
                 checkpoint['completed_configs'] += 1
                 self.results['passive'][dataset] = {"best_cfg": best_cfg, "best_metric": best_metric, "history": hist}
                 checkpoint['results'] = self.results['passive']
@@ -430,47 +421,41 @@ class RegressionTuner:
             data = nan_to_none(self.results['passive'])
             json.dump(data, f, indent=2)
 
-        # Clean up checkpoint file
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
 
-        total_time = time.time() - start_time
-        print(f"\nTotal time: {total_time/3600:.2f} hours")
-        print(f"Average time per config: {total_time/total_configs:.2f} seconds")
+        print("Passive Done")
 
     def run_uncertainty_tuning(self):
-        """Run uncertainty-based active learning hyperparameter tuning."""
-        print("\n" + "="*60)
-        print("UNCERTAINTY-BASED ACTIVE LEARNING HYPERPARAMETER TUNING")
-        print("="*60)
+
+        if os.path.exists(os.path.join(DATA_DIR, 'reg_uncertainty_results.json')):
+            with open(os.path.join(DATA_DIR, 'reg_uncertainty_results.json'), 'r') as f:
+                self.results['uncertainty'] = json.load(f)
+            return
         
         # Load checkpoint if exists
         checkpoint_file = os.path.join(DATA_DIR, 'reg_uncertainty_main_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
-            print(f"Resuming from checkpoint: {checkpoint['completed_datasets']} datasets completed")
-            self.results['uncertainty'] = checkpoint.get('results', {})
+            print(f"Resuming from checkpoint")
         else:
             checkpoint = {'completed_datasets': 0, 'results': {}}
             self.results['uncertainty'] = {}
             print("Starting fresh run")
 
-        start_time = time.time()
-
         # in run_uncertainty_tuning(...)
         for dataset_idx, dataset in enumerate(self.datasets):
-            if dataset in self.results.get('uncertainty', {}):
-                print(f"\n=== Skipping {dataset} (already completed) ===")
+            if dataset in self.results['uncertainty']:
                 continue
 
-            print(f"\n=== Processing {dataset} ===")
+            print(f"\nTuning {dataset}")
             self.results['uncertainty'][dataset] = {}
 
             for method in METHODS:
-                print(f"\n--- Method: {method} ---")
+                print(f"\nMethod: {method}")
+
                 result = self.evaluate_curve_uncertainty(dataset, method, BUDGETS)
-                # result has: best_cfg, best_metric (RMSE), curve
                 self.results['uncertainty'][dataset][method] = result
 
             checkpoint['completed_datasets'] += 1
@@ -486,34 +471,32 @@ class RegressionTuner:
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
 
-        total_time = time.time() - start_time
-        print(f"\nTotal time: {total_time/3600:.2f} hours")
-        print(f'\nSaved figures and results to {DATA_DIR}')
-        print(f'Used {N_TRIALS} trials per config')
+        print("Active Uncertainty Done")
 
     def evaluate_curve_uncertainty(self, dataset: str, method: str, budgets: List[int]) -> Dict:
         tune_budget = sorted(budgets)[len(budgets)//2]
 
-        # get best config + best rmse at tune_budget
-        (tcfg, acfg_base, hidden_units), best_rmse = self.tune_hparams_uncertainty(dataset, method, tune_budget)
+        best_config, best_acc = self.tune_hparams_uncertainty(dataset, method, tune_budget)
+        tcfg, acfg_base, hidden_units = best_config
 
         checkpoint_file = os.path.join(DATA_DIR, f'reg_uncertainty_{dataset}_{method}_curve_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
-            print(f"Resuming curve evaluation from checkpoint: {len(checkpoint.get('curve', {}))} budgets completed")
+            print(f"Resuming curve evaluation from checkpoint")
+
             results = {
                 'best_cfg': checkpoint.get('best_cfg'),
-                'best_metric': checkpoint.get('best_metric', best_rmse),  # RMSE
+                'best_metric': checkpoint.get('best_metric', best_acc),
                 'curve': checkpoint.get('curve', {})
             }
         else:
+            checkpoint = {}
             results = {
                 'best_cfg': self._serialize_config(tcfg, acfg_base, hidden_units),
-                'best_metric': float(best_rmse),
+                'best_metric': float(best_acc),
                 'curve': {}
             }
-            print("Starting fresh curve evaluation")
 
         pbar = tqdm(total=len(budgets), desc=f"Curve {dataset}-{method}",
                     initial=len(results['curve']), position=0, leave=True)
@@ -550,20 +533,23 @@ class RegressionTuner:
 
             pbar.update(1)
 
-            # persist checkpoint with best fields
+            checkpoint = {
+                'best_cfg': results['best_cfg'],
+                'best_metric': results['best_metric'],
+                'curve': results['curve']
+            }
             with open(checkpoint_file, 'w') as f:
-                json.dump(nan_to_none(results), f, indent=2)
+                json.dump(nan_to_none(checkpoint), f, indent=2)
 
         pbar.close()
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
 
-        return results  # { best_cfg, best_metric, curve }
+        return results
 
 
     def tune_hparams_uncertainty(self, dataset: str, method: str, tune_budget: int) -> tuple:
-        """Tune hyperparameters for uncertainty-based active learning."""
-        best_rmse = float('inf')
+        best_acc = -float('inf')
         best_config = None
         
         total_configs = len(LR) * len(WD) * len(HIDDEN) * len(BS) * len(INITS) * len(QUERIES)
@@ -573,17 +559,19 @@ class RegressionTuner:
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
-            print(f"Resuming hyperparameter tuning from checkpoint: {checkpoint['completed_configs']} configs completed")
-            best_rmse = checkpoint.get('best_rmse', float('inf'))
+            print(f"Resuming hyperparameter tuning from checkpoint")
+
+            best_acc = checkpoint.get('best_acc', -float('inf'))
             serialized_config = checkpoint.get('best_config', None)
             best_config = None
+
             if serialized_config is not None:
                 best_config = self._deserialize_config(serialized_config)
             completed_configs = checkpoint['completed_configs']
+
         else:
-            checkpoint = {'completed_configs': 0, 'best_rmse': float('inf'), 'best_config': None}
+            checkpoint = {'completed_configs': 0, 'best_acc': -float('inf'), 'best_config': None}
             completed_configs = 0
-            print("Starting fresh hyperparameter tuning")
         
         # Create progress bar
         pbar = tqdm(total=total_configs, desc=f"Tuning {dataset}-{method}", 
@@ -596,25 +584,24 @@ class RegressionTuner:
                 pbar.update(1)
                 continue
                 
-            print(f'Tuning config {config_idx+1}/{total_configs}: lr={lr}, wd={wd}, hidden={hidden}, bs={bs}, init={init}, query={query}')
+            print(f'Config {config_idx+1}/{total_configs}: lr={lr}, wd={wd}, hidden={hidden}, bs={bs}, init={init}, query={query}')
             
-            # Evaluate this configuration using CV
             metrics = self.evaluate_config_cv_active(dataset, 'uncertainty', method, lr, wd, hidden, bs, init, query, tune_budget)
-            avg_rmse = metrics['rmse_mean']
+            avg_acc = metrics['rmse_mean']
             
-            if avg_rmse < best_rmse:
-                best_rmse = avg_rmse
+            if avg_acc > best_acc:
+                best_acc = avg_acc
                 train_cfg = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20)
                 active_cfg = ActiveConfig(initial_labeled=init, query_batch=query, max_labels=tune_budget)
                 best_config = (train_cfg, active_cfg, hidden)
             
             # Update progress bar
             pbar.update(1)
-            pbar.set_postfix({'best_rmse': f"{best_rmse:.4f}"})
+            pbar.set_postfix({'best_acc': f"{best_acc:.4f}"})
             
             # Save checkpoint after each config
             checkpoint['completed_configs'] = config_idx + 1
-            checkpoint['best_rmse'] = best_rmse
+            checkpoint['best_acc'] = best_acc
             if best_config is not None:
                 checkpoint['best_config'] = self._serialize_config(best_config[0], best_config[1], best_config[2])
             with open(checkpoint_file, 'w') as f:
@@ -625,42 +612,37 @@ class RegressionTuner:
         
         pbar.close()
         
-        # Clean up checkpoint file
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
         
-        print(f"Best config for {dataset}-{method}: RMSE={best_rmse:.4f}")
-        return best_config, best_rmse
+        print(f"Best config for {dataset}-{method}: accuracy={best_acc:.4f}")
+        return best_config, best_acc
 
     def run_sensitivity_tuning(self):
-        """Run sensitivity-based active learning hyperparameter tuning."""
-        print("\n" + "="*60)
-        print("SENSITIVITY-BASED ACTIVE LEARNING HYPERPARAMETER TUNING")
-        print("="*60)
+
+        if os.path.exists(os.path.join(DATA_DIR, 'reg_sensitivity_results.json')):
+            with open(os.path.join(DATA_DIR, 'reg_sensitivity_results.json'), 'r') as f:
+                self.results['sensitivity'] = json.load(f)
+            return
         
         # Load checkpoint if exists
         checkpoint_file = os.path.join(DATA_DIR, 'reg_sensitivity_main_checkpoint.json')
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
-            print(f"Resuming from checkpoint: {checkpoint['completed_datasets']} datasets completed")
+            print(f"Resuming from checkpoint")
             self.results['sensitivity'] = checkpoint.get('results', {})
         else:
             checkpoint = {'completed_datasets': 0, 'results': {}}
             self.results['sensitivity'] = {}
-            print("Starting fresh run")
-
-        start_time = time.time()
 
         # in run_sensitivity_tuning(...)
         for dataset_idx, dataset in enumerate(self.datasets):
-            if dataset in self.results.get('sensitivity', {}):
-                print(f"\n=== Skipping {dataset} (already completed) ===")
+            if dataset in self.results['sensitivity']:
                 continue
 
-            print(f"\n=== Processing {dataset} ===")
+            print(f"\nProcessing {dataset}")
             result = self.evaluate_curve_sensitivity(dataset, BUDGETS)
-            # result has: best_cfg, best_metric (RMSE), curve
             self.results['sensitivity'][dataset] = result
 
             checkpoint['completed_datasets'] += 1
@@ -672,20 +654,15 @@ class RegressionTuner:
             json.dump(nan_to_none(self.results['sensitivity']), f, indent=2)
 
 
-        # Clean up checkpoint file
+        # Remove up checkpoint file
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
 
-        total_time = time.time() - start_time
-        print(f"\nTotal time: {total_time/3600:.2f} hours")
-        print(f'\nSaved figures and results to {DATA_DIR}')
-        print(f'Used {N_TRIALS} trials per config')
-
-    # in evaluate_curve_sensitivity(...)
     def evaluate_curve_sensitivity(self, dataset: str, budgets: List[int]) -> Dict:
         tune_budget = sorted(budgets)[len(budgets)//2]
 
-        (tcfg, acfg_base, hidden_units), best_rmse = self.tune_hparams_sensitivity(dataset, tune_budget)
+        best_config, best_acc = self.tune_hparams_sensitivity(dataset, tune_budget)
+        tcfg, acfg_base, hidden_units = best_config
 
         checkpoint_file = os.path.join(DATA_DIR, f'reg_sensitivity_{dataset}_curve_checkpoint.json')
         if os.path.exists(checkpoint_file):
@@ -694,13 +671,14 @@ class RegressionTuner:
             print(f"Resuming curve evaluation from checkpoint: {len(checkpoint.get('curve', {}))} budgets completed")
             results = {
                 'best_cfg': checkpoint.get('best_cfg'),
-                'best_metric': checkpoint.get('best_metric', best_rmse),  # RMSE
+                'best_metric': checkpoint.get('best_metric', best_acc),
                 'curve': checkpoint.get('curve', {})
             }
         else:
+            checkpoint = {}
             results = {
                 'best_cfg': self._serialize_config(tcfg, acfg_base, hidden_units),
-                'best_metric': float(best_rmse),
+                'best_metric': float(best_acc),
                 'curve': {}
             }
             print("Starting fresh curve evaluation")
@@ -739,8 +717,13 @@ class RegressionTuner:
 
             pbar.update(1)
 
+            checkpoint = {
+                'best_cfg': results['best_cfg'],
+                'best_metric': results['best_metric'],
+                'curve': results['curve']
+            }
             with open(checkpoint_file, 'w') as f:
-                json.dump(nan_to_none(results), f, indent=2)
+                json.dump(nan_to_none(checkpoint), f, indent=2)
 
         pbar.close()
         if os.path.exists(checkpoint_file):
@@ -750,8 +733,7 @@ class RegressionTuner:
 
 
     def tune_hparams_sensitivity(self, dataset: str, tune_budget: int) -> tuple:
-        """Tune hyperparameters for sensitivity-based active learning."""
-        best_rmse = float('inf')
+        best_acc = -float('inf')
         best_config = None
         
         total_configs = len(LR) * len(WD) * len(HIDDEN) * len(BS) * len(INITS) * len(QUERIES)
@@ -761,17 +743,18 @@ class RegressionTuner:
         if os.path.exists(checkpoint_file):
             with open(checkpoint_file, 'r') as f:
                 checkpoint = json.load(f)
-            print(f"Resuming hyperparameter tuning from checkpoint: {checkpoint['completed_configs']} configs completed")
-            best_rmse = checkpoint.get('best_rmse', float('inf'))
+            print(f"Resuming hyperparameter tuning from checkpoint")
+
+            best_acc = checkpoint.get('best_acc', -float('inf'))
             serialized_config = checkpoint.get('best_config', None)
             best_config = None
+
             if serialized_config is not None:
                 best_config = self._deserialize_config(serialized_config)
             completed_configs = checkpoint['completed_configs']
         else:
-            checkpoint = {'completed_configs': 0, 'best_rmse': float('inf'), 'best_config': None}
+            checkpoint = {'completed_configs': 0, 'best_acc': -float('inf'), 'best_config': None}
             completed_configs = 0
-            print("Starting fresh hyperparameter tuning")
         
         # Create progress bar
         pbar = tqdm(total=total_configs, desc=f"Tuning {dataset}-sensitivity", 
@@ -784,25 +767,24 @@ class RegressionTuner:
                 pbar.update(1)
                 continue
                 
-            print(f'Tuning config {config_idx+1}/{total_configs}: lr={lr}, wd={wd}, hidden={hidden}, bs={bs}, init={init}, query={query}')
+            print(f'Config {config_idx+1}/{total_configs}: lr={lr}, wd={wd}, hidden={hidden}, bs={bs}, init={init}, query={query}')
             
-            # Evaluate this configuration using CV
             metrics = self.evaluate_config_cv_active(dataset, 'sensitivity', '', lr, wd, hidden, bs, init, query, tune_budget)
-            avg_rmse = metrics['rmse_mean']
+            avg_acc = metrics['rmse_mean']
             
-            if avg_rmse < best_rmse:
-                best_rmse = avg_rmse
+            if avg_acc > best_acc:
+                best_acc = avg_acc
                 train_cfg = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20)
                 active_cfg = ActiveConfig(initial_labeled=init, query_batch=query, max_labels=tune_budget)
                 best_config = (train_cfg, active_cfg, hidden)
             
             # Update progress bar
             pbar.update(1)
-            pbar.set_postfix({'best_rmse': f"{best_rmse:.4f}"})
+            pbar.set_postfix({'best_acc': f"{best_acc:.4f}"})
             
             # Save checkpoint after each config
             checkpoint['completed_configs'] = config_idx + 1
-            checkpoint['best_rmse'] = best_rmse
+            checkpoint['best_acc'] = best_acc
             if best_config is not None:
                 checkpoint['best_config'] = self._serialize_config(best_config[0], best_config[1], best_config[2])
             with open(checkpoint_file, 'w') as f:
@@ -813,18 +795,14 @@ class RegressionTuner:
         
         pbar.close()
         
-        # Clean up checkpoint file
+        # Remove up checkpoint file
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
         
-        print(f"Best config for {dataset}-sensitivity: RMSE={best_rmse:.4f}")
-        return best_config, best_rmse
+        print(f"Best config for {dataset}-sensitivity: accuracy={best_acc:.4f}")
+        return best_config, best_acc
 
     def plot_results(self):
-        """Plot and save results for all methods."""
-        print("\n" + "="*60)
-        print("GENERATING RESULTS PLOTS")
-        print("="*60)
         
         # Plot passive learning results
         if 'passive' in self.results:
@@ -838,7 +816,6 @@ class RegressionTuner:
             self.plot_sensitivity_results()
 
     def plot_passive_results(self):
-        """Plot passive learning results."""
         plt.figure(figsize=(8, 5))
         datasets_plot = []
         means_plot = []
@@ -863,10 +840,7 @@ class RegressionTuner:
         plt.grid(True, alpha=0.3)
         plt.tight_layout()
         plt.savefig(os.path.join(FIGURES_DIR, 'passive_reg_best_rmse.png'), dpi=200)
-        plt.show()
-
-        print(f'\nSaved passive regression tuning results to {FIGURES_DIR}')
-        print(f'Used {N_TRIALS} trials × {N_FOLDS} folds = {N_TRIALS * N_FOLDS} evaluations per config')
+        plt.close()
 
     def plot_uncertainty_results(self):
         """Plot uncertainty-based active learning results."""
@@ -881,15 +855,6 @@ class RegressionTuner:
         pass
 
     def run_all(self):
-        """Run all three methods: passive, uncertainty, and sensitivity."""
-        print("="*80)
-        print("COMBINED REGRESSION HYPERPARAMETER TUNING")
-        print("="*80)
-        print(f"Datasets: {self.datasets}")
-        print(f"Methods: Passive, Uncertainty-based, Sensitivity-based")
-        print(f"Trials per config: {N_TRIALS}")
-        print(f"CV folds: {N_FOLDS}")
-        print("="*80)
         
         # Run passive learning
         self.run_passive_tuning()
@@ -903,18 +868,14 @@ class RegressionTuner:
         # Plot all results
         self.plot_results()
         
-        print("\n" + "="*80)
-        print("ALL EXPERIMENTS COMPLETED!")
-        print("="*80)
+        print("All completed")
 
 
 def main():
-    """Main function to run the combined regression tuning."""
     parser = argparse.ArgumentParser(description='Combined Regression Hyperparameter Tuning')
-    parser.add_argument('--datasets', nargs='+', default=DATASETS, 
-                       help='Datasets to use for tuning')
+    parser.add_argument('--datasets', nargs='+', default=DATASETS)
     parser.add_argument('--method', choices=['passive', 'uncertainty', 'sensitivity', 'all'], 
-                       default='all', help='Which method to run')
+                       default='all')
     
     args = parser.parse_args()
     
@@ -922,9 +883,9 @@ def main():
     tuner = RegressionTuner(datasets=args.datasets)
     
     # Run specified method(s)
-    # if args.method == 'passive':
-    #     tuner.run_passive_tuning()
-    if args.method == 'uncertainty':
+    if args.method == 'passive':
+        tuner.run_passive_tuning()
+    elif args.method == 'uncertainty':
         tuner.run_uncertainty_tuning()
     elif args.method == 'sensitivity':
         tuner.run_sensitivity_tuning()
@@ -932,7 +893,7 @@ def main():
         tuner.run_all()
     
     # Always plot results
-    tuner.plot_results()
+    # tuner.plot_results()
 
 
 if __name__ == "__main__":

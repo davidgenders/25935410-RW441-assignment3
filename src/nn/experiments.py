@@ -20,6 +20,7 @@ class ActiveConfig:
 
 
 def _build_loaders(train: TensorDataset, val: TensorDataset, test: TensorDataset, batch_size: int) -> Tuple[DataLoader, DataLoader, DataLoader]:
+    # Create data loaders with appropriate shuffling
     return (
         DataLoader(train, batch_size=batch_size, shuffle=True),
         DataLoader(val, batch_size=batch_size, shuffle=False),
@@ -68,7 +69,7 @@ def run_active_classification(
     model = _make_model(input_dim, hidden_units, num_classes)
     loss_fn = nn.CrossEntropyLoss()
 
-    # Labeled pool indices
+    # Set up initial labeled and unlabeled pools
     num_train = split.x_train.shape[0]
     labeled = torch.randperm(num_train)[: active_config.initial_labeled]
     unlabeled = torch.tensor([i for i in range(num_train) if i not in set(labeled.tolist())], dtype=torch.long)
@@ -76,17 +77,20 @@ def run_active_classification(
     x_pool = split.x_train.clone()
     y_pool = split.y_train.clone()
 
+    # Active learning loop
     while labeled.numel() < min(active_config.max_labels, num_train):
         train_ds = TensorDataset(x_pool[labeled], y_pool[labeled])
         val_ds = TensorDataset(split.x_val, split.y_val)
         test_ds = TensorDataset(split.x_test, split.y_test)
         loaders = _build_loaders(train_ds, val_ds, test_ds, train_config.batch_size)
+        # Reset model weights for fresh training
         model.apply(lambda m: isinstance(m, nn.Linear) and m.reset_parameters())
         train_passive(model, loaders[0], loaders[1], loss_fn, train_config)
 
         if unlabeled.numel() == 0:
             break
 
+        # Select new samples to label
         if strategy == "uncertainty":
             sel = uncertainty_sampling(
                 model,
@@ -97,6 +101,7 @@ def run_active_classification(
         else:
             sel = sensitivity_sampling(model, x_pool[unlabeled].to("cpu"), active_config.query_batch)
 
+        # Update labeled and unlabeled pools
         newly_selected = unlabeled[sel]
         labeled = torch.unique(torch.cat([labeled, newly_selected]))
         mask = torch.ones_like(unlabeled, dtype=torch.bool)
@@ -106,7 +111,7 @@ def run_active_classification(
         if labeled.numel() >= active_config.max_labels:
             break
 
-    # Final evaluation
+    # Final evaluation on test set
     final_train = TensorDataset(x_pool[labeled], y_pool[labeled])
     val_ds = TensorDataset(split.x_val, split.y_val)
     test_ds = TensorDataset(split.x_test, split.y_test)
@@ -128,6 +133,7 @@ def run_active_regression(
     model = _make_model(input_dim, hidden_units, 1)
     loss_fn = nn.MSELoss()
 
+    # Set up initial labeled and unlabeled pools
     num_train = split.x_train.shape[0]
     labeled = torch.randperm(num_train)[: active_config.initial_labeled]
     unlabeled = torch.tensor([i for i in range(num_train) if i not in set(labeled.tolist())], dtype=torch.long)
@@ -135,17 +141,20 @@ def run_active_regression(
     x_pool = split.x_train.clone()
     y_pool = split.y_train.clone()
 
+    # Active learning loop
     while labeled.numel() < min(active_config.max_labels, num_train):
         train_ds = TensorDataset(x_pool[labeled], y_pool[labeled])
         val_ds = TensorDataset(split.x_val, split.y_val)
         test_ds = TensorDataset(split.x_test, split.y_test)
         loaders = _build_loaders(train_ds, val_ds, test_ds, train_config.batch_size)
+        # Reset model weights for fresh training
         model.apply(lambda m: isinstance(m, nn.Linear) and m.reset_parameters())
         train_passive(model, loaders[0], loaders[1], loss_fn, train_config)
 
         if unlabeled.numel() == 0:
             break
 
+        # Select new samples to label
         if strategy == "uncertainty":
             sel = uncertainty_sampling(
                 model,
@@ -156,6 +165,7 @@ def run_active_regression(
         else:
             sel = sensitivity_sampling(model, x_pool[unlabeled].to("cpu"), active_config.query_batch)
 
+        # Update labeled and unlabeled pools
         newly_selected = unlabeled[sel]
         labeled = torch.unique(torch.cat([labeled, newly_selected]))
         mask = torch.ones_like(unlabeled, dtype=torch.bool)
@@ -165,6 +175,7 @@ def run_active_regression(
         if labeled.numel() >= active_config.max_labels:
             break
 
+    # Final evaluation on test set
     final_train = TensorDataset(x_pool[labeled], y_pool[labeled])
     val_ds = TensorDataset(split.x_val, split.y_val)
     test_ds = TensorDataset(split.x_test, split.y_test)

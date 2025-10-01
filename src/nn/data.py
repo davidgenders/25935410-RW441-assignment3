@@ -20,6 +20,7 @@ class Split:
 
 
 def _standardize(x_train: np.ndarray, x_val: np.ndarray, x_test: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    # Standardize features using train data stats
     scaler = StandardScaler()
     x_train_s = scaler.fit_transform(x_train)
     x_val_s = scaler.transform(x_val)
@@ -28,6 +29,7 @@ def _standardize(x_train: np.ndarray, x_val: np.ndarray, x_test: np.ndarray) -> 
 
 
 def make_classification_split(name: Literal["iris", "wine", "breast_cancer"], test_size: float = 0.2, val_size: float = 0.2, seed: int = 42) -> Split:
+    # Load the dataset
     if name == "iris":
         ds = datasets.load_iris()
     elif name == "wine":
@@ -35,9 +37,11 @@ def make_classification_split(name: Literal["iris", "wine", "breast_cancer"], te
     elif name == "breast_cancer":
         ds = datasets.load_breast_cancer()
 
+    # Split into train/test first, then train/val
     x_train, x_test, y_train, y_test = train_test_split(ds.data, ds.target, test_size=test_size, random_state=seed, stratify=ds.target)
     x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=val_size, random_state=seed, stratify=y_train)
 
+    # Standardize features
     x_train, x_val, x_test = _standardize(x_train, x_val, x_test)
 
     return Split(
@@ -51,20 +55,23 @@ def make_classification_split(name: Literal["iris", "wine", "breast_cancer"], te
 
 
 def make_regression_split(name: Literal["diabetes", "linnerud", "california"], test_size: float = 0.2, val_size: float = 0.2, seed: int = 42) -> Split:
+    # Load the dataset
     if name == "diabetes":
         ds = datasets.load_diabetes()
         y = ds.target.astype(np.float32)
     elif name == "linnerud":
         ds = datasets.load_linnerud()
-        y = ds.target[:, 0].astype(np.float32)
+        y = ds.target[:, 0].astype(np.float32)  # Just use the first target
     elif name == "california":
         ds = datasets.fetch_california_housing()
         y = ds.target.astype(np.float32)
 
     x = ds.data.astype(np.float32)
+    # Split into train/test first, then train/val
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, random_state=seed)
     x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=val_size, random_state=seed)
 
+    # Standardize features
     x_train, x_val, x_test = _standardize(x_train, x_val, x_test)
 
     return Split(

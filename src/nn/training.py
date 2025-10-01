@@ -29,7 +29,7 @@ def train_passive(
 ) -> Dict[str, float]:
     device = torch.device("cpu")
     model.to(device)
-    # Use Adam for more stable optimization across settings
+    # Use Adam optimizer for stable training
     optimizer = torch.optim.Adam(
         model.parameters(), lr=config.learning_rate, weight_decay=config.weight_decay
     )
@@ -49,7 +49,7 @@ def train_passive(
             preds = model(xb)
             loss = loss_fn(preds, yb)
             loss.backward()
-            # Gradient clipping to prevent exploding updates
+            # Clip gradients to prevent exploding updates
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
             optimizer.step()
 
@@ -61,6 +61,7 @@ def train_passive(
 
         val_epoch_loss = float("nan")
         if val_loader is not None:
+            # Evaluate on validation set
             model.eval()
             with torch.no_grad():
                 total_val = 0.0
@@ -73,6 +74,7 @@ def train_passive(
                     num_val += xb.shape[0]
                 val_epoch_loss = total_val / max(1, num_val)
 
+            # Early stopping check
             if val_epoch_loss + 1e-12 < best_val:
                 best_val = val_epoch_loss
                 best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
@@ -83,6 +85,7 @@ def train_passive(
             if epochs_no_improve >= config.patience:
                 break
 
+    # Load best model state
     if best_state is not None:
         model.load_state_dict(best_state)
 

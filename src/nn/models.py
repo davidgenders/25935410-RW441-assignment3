@@ -21,6 +21,7 @@ class OneHiddenMLP(nn.Module):
         self.hidden_units = hidden_units
         self.output_dim = output_dim
 
+        # Simple two-layer MLP
         self.net = nn.Sequential(
             nn.Linear(input_dim, hidden_units, bias=bias),
             hidden_activation(),
@@ -30,6 +31,7 @@ class OneHiddenMLP(nn.Module):
         self._reset_parameters()
 
     def _reset_parameters(self) -> None:
+        # Initialize weights using Kaiming uniform for ReLU activations
         for module in self.modules():
             if isinstance(module, nn.Linear):
                 nn.init.kaiming_uniform_(module.weight, a=0.0, nonlinearity="relu")

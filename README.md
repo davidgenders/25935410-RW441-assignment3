@@ -1,94 +1,115 @@
-# 25935410-rw441-assignment3
-This is the repo for 25935410 RW441 Assignment 3
+# Machine Learning Assignment 3: Active Learning
 
-Usage
------
+This repository contains implementations and experiments for active learning methods in both classification and regression tasks.
 
-Create a virtual environment and install requirements:
+## Overview
+
+The project compares different active learning strategies:
+- **Passive Learning**: Traditional supervised learning with all labeled data
+- **Uncertainty-based Active Learning**: Query samples based on model uncertainty
+- **Sensitivity-based Active Learning**: Query samples based on gradient sensitivity
+
+## Project Structure
 
 ```
-python -m venv .venv
-source .venv/bin/activate
+├── src/
+│   ├── combined_run_cls.py      # Classification experiments runner
+│   ├── combined_run_reg.py      # Regression experiments runner
+│   ├── compare_classification.ipynb
+│   ├── compare_regression.ipynb
+│   └── nn/                       # Neural network modules
+│       ├── data.py              # Data loading and preprocessing
+│       ├── evaluation.py        # Model evaluation metrics
+│       ├── experiments.py       # Active learning experiments
+│       ├── models.py            # Neural network models
+│       ├── strategies.py        # Active learning strategies
+│       └── training.py          # Training utilities
+├── data/                        # Experiment results and checkpoints
+├── report/                      # LaTeX report and figures
+├── papers/                      # Reference papers
+└── requirements.txt             # Python dependencies
+```
+
+## Features
+
+- **Cross-validation**: Robust evaluation with multiple trials and CV folds
+- **Checkpoint system**: Resume interrupted experiments
+- **Progress tracking**: Visual progress bars with tqdm
+- **Multiple datasets**: Support for various classification and regression datasets
+- **Flexible configuration**: Easy hyperparameter tuning
+
+## Datasets
+
+### Classification
+- Iris
+- Wine
+- Breast Cancer
+
+### Regression
+- Diabetes
+- Linnerud
+- California Housing
+
+## Installation
+
+1. Clone the repository
+2. Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
-Run experiments:
+## Usage
 
-```
-python -m alnn.cli passive-cls iris --device cpu
-python -m alnn.cli active-cls iris --strategy uncertainty
-python -m alnn.cli active-cls iris --strategy sensitivity
-python -m alnn.cli passive-reg diabetes
-python -m alnn.cli active-reg diabetes --strategy uncertainty
+### Run Classification Experiments
+```bash
+python src/combined_run_cls.py --method all
 ```
 
-Results are printed as JSON.
-
-Hyperparameter Tuning
----------------------
-
-Random search examples (print JSON per trial and best summary at end):
-
-Classification (passive):
-```
-python -m alnn.tune passive-cls iris --search random --trials 20 --device cpu
+### Run Regression Experiments
+```bash
+python src/combined_run_reg.py --method all
 ```
 
-Classification (active, uncertainty entropy):
-```
-python -m alnn.tune active-cls iris --strategy uncertainty --method entropy --search random --trials 20 --device cpu
-```
+### Run Specific Methods
+```bash
+# Only passive learning
+python src/combined_run_cls.py --method passive
 
-Classification (active, sensitivity):
-```
-python -m alnn.tune active-cls iris --strategy sensitivity --search random --trials 20 --device cpu
-```
+# Only uncertainty-based active learning
+python src/combined_run_cls.py --method uncertainty
 
-Regression (passive):
-```
-python -m alnn.tune passive-reg diabetes --search random --trials 20 --device cpu
+# Only sensitivity-based active learning
+python src/combined_run_cls.py --method sensitivity
 ```
 
-Regression (active, uncertainty margin):
-```
-python -m alnn.tune active-reg diabetes --strategy uncertainty --method margin --search random --trials 20 --device cpu
-```
+## Active Learning Strategies
 
-Flags to control search spaces (examples):
-```
---lrs 0.001 0.01 0.1 --wds 0 0.0001 --bss 32 64 128 --hidden 32 64 128 --patience 10 20 40 --inits 10 20 40 --queries 5 10 20 --max_labels 200
-```
+### Uncertainty Sampling
+- **Entropy**: Select samples with highest prediction entropy
+- **Margin**: Select samples with smallest margin between top-2 classes
+- **Least Confidence**: Select samples with lowest maximum probability
 
-Performance Criteria and Empirical Protocol
-------------------------------------------
+### Sensitivity Sampling
+- Select samples with highest gradient sensitivity
+- Measures how much the model output changes with input perturbations
 
-Classification metrics (reported on validation during tuning; test once at the end):
-- Accuracy: overall correctness
-- Macro-F1: balances precision/recall across classes, handles imbalance
-- AUROC (OvR): discrimination across thresholds (binary: AUROC of positive class)
-- Log-loss: probabilistic calibration (lower is better)
+## Results
 
-Regression metrics:
-- RMSE: error magnitude (sensitive to large errors)
-- MAE: robust average absolute error
-- R2: explained variance
+Results are automatically saved to:
+- `data/` directory for JSON results
+- `report/figures/` directory for plots
 
-Active learning efficiency metrics:
-- ALC (Area under Learning Curve): integrate performance vs. labels acquired
-- Label-efficiency at fixed budget: metric value at N labeled points (e.g., 50, 100, 200)
+## Requirements
 
-Empirical protocol (statistically sound):
-1) Data splits: fixed train/val/test (or 5-fold CV for small datasets). Validation drives model selection; test is used once.
-2) Hyperparameter search: random or grid search using `alnn.tune`, same trial budget per algorithm.
-3) Multiple seeds: repeat each configuration (e.g., 3 runs) to average over initialization and sampling variance.
-4) Model selection: choose params maximizing val accuracy/macro-F1 (classification) or minimizing val RMSE (regression); for AL, use ALC as primary.
-5) Final fit: retrain best configuration on train+val; evaluate once on test. Report mean±std across seeds.
-6) Statistical comparison: paired tests across seeds (e.g., Wilcoxon signed-rank on per-seed test metrics) to compare algorithms.
+- Python 3.8+
+- PyTorch
+- scikit-learn
+- matplotlib
+- numpy
+- tqdm
 
-Notes:
-- Keep labeling budgets identical across active strategies.
-- Track the full performance-vs-label curve to compute ALC.
-Datasets
---------
+See `requirements.txt` for complete dependency list.
 
-See `data/README.md` for the list of classification and regression problems (with complexity notes) used in experiments. All datasets are loaded via scikit-learn; no manual downloads are needed.
+## Report
+
+A detailed LaTeX report is available in the `report/` directory with experimental results and analysis.

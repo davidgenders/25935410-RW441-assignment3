@@ -12,12 +12,13 @@ def auc_from_probs(y_true_np, y_prob):
     y_true_np = np.asarray(y_true_np)
     y_prob = np.asarray(y_prob)
 
-    # If already 1D scores (binary)
+    # Handle different probability formats
     if y_prob.ndim == 1 or (y_prob.ndim == 2 and y_prob.shape[1] == 1):
+        # Single column case
         return float(roc_auc_score(y_true_np, y_prob))
 
-    # Binary case with two columns: take positive-class prob
     if y_prob.shape[1] == 2:
+        # Binary case with two columns - use positive class probability
         return float(roc_auc_score(y_true_np, y_prob[:, 1]))
 
     # Multiclass case
@@ -28,11 +29,12 @@ def evaluate_classification(model: nn.Module, loader: DataLoader) -> Dict[str, f
     y_true, y_pred = predict(model, loader, device="cpu")
     y_true_np = y_true.numpy()
     y_pred_labels = torch.argmax(y_pred, dim=1).numpy()
-    # Softmax probabilities for probabilistic metrics
+    
+    # Convert logits to probabilities for metrics that need them
     if y_pred.shape[1] > 1:
         y_prob = torch.softmax(y_pred, dim=1).numpy()
     else:
-        # Binary with single logit
+        # Binary case with single logit - convert to two-class probabilities
         p1 = torch.sigmoid(y_pred.squeeze(-1)).numpy()
         y_prob = torch.stack([torch.from_numpy(1.0 - p1), torch.from_numpy(p1)], dim=1).numpy()
 
