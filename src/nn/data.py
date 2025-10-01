@@ -54,14 +54,15 @@ def make_classification_split(name: Literal["iris", "wine", "breast_cancer"], te
     )
 
 
-def make_regression_split(name: Literal["diabetes", "linnerud", "california"], test_size: float = 0.2, val_size: float = 0.2, seed: int = 42) -> Split:
+def make_regression_split(name: Literal["diabetes", "wine_quality", "california"], test_size: float = 0.2, val_size: float = 0.2, seed: int = 42) -> Split:
     # Load the dataset
     if name == "diabetes":
         ds = datasets.load_diabetes()
         y = ds.target.astype(np.float32)
-    elif name == "linnerud":
-        ds = datasets.load_linnerud()
-        y = ds.target[:, 0].astype(np.float32)  # Just use the first target
+    elif name == "wine_quality":
+        from sklearn.datasets import fetch_openml
+        ds = fetch_openml('wine-quality-red', version=1, as_frame=False, parser='auto')
+        y = ds.target.astype(np.float32)
     elif name == "california":
         ds = datasets.fetch_california_housing()
         y = ds.target.astype(np.float32)

@@ -44,7 +44,7 @@ def run_passive_classification(dataset_name: Literal["iris", "wine", "breast_can
     return evaluate_classification(model, loaders[2])
 
 
-def run_passive_regression(dataset_name: Literal["diabetes", "linnerud", "california"], hidden_units: int = 64, config: TrainConfig = TrainConfig()) -> Dict[str, float]:
+def run_passive_regression(dataset_name: Literal["diabetes", "wine_quality", "california"], hidden_units: int = 64, config: TrainConfig = TrainConfig()) -> Dict[str, float]:
     split = make_regression_split(dataset_name)
     train, val, test = to_datasets(split)
     input_dim = split.x_train.shape[1]
@@ -121,7 +121,7 @@ def run_active_classification(
 
 
 def run_active_regression(
-    dataset_name: Literal["diabetes", "linnerud", "california"],
+    dataset_name: Literal["diabetes", "wine_quality", "california"],
     strategy: Literal["uncertainty", "sensitivity"],
     uncertainty_method: Literal["entropy", "margin", "least_confidence"] = "entropy",
     hidden_units: int = 64,

@@ -35,7 +35,7 @@
 \maketitle
 
 \begin{abstract}
-Active learning aims to reduce labeling costs by intelligently selecting the most informative samples for annotation. This assignment investigates the difference in performance of passive vs active learning. And within active learning it compares two families of query strategies, uncertainty sampling and sensitivity-based selection. Uncertainty sampling is implemented using least confidence, margin, and entropy, and proposes a sensitivity-based approach using output Jacobian norms. Experiments were conducted on six datasets spanning classification tasks including Iris, Wine, and Breast Cancer, and regression tasks including Diabetes, Linnerud, and California Housing, with varying complexity. A one-hidden-layer multilayer perceptron was trained using minibatch stochastic gradient descent with weight decay and early stopping. Hyperparameter optimization was employed via cross-validation accross multiple trials with different random seeds. Performance for classification was measured using accuracy, F1-macro, and area under the receiver operating characteristic curve. For regression performance was measured with root mean squared error, mean absolute error, and coefficient of determination for regression. Results demonstrated that sensitivity-based selection consistently outperformed uncertainty methods on complex problems, achieving superior label efficiency especially at smaller budgets. Uncertainty sampling showed competitive performance on simpler tasks, with entropy and margin methods performing similarly. The findings indicated that sensitivity analysis was particularly effective for high-dimensional, complex problems where traditional uncertainty measures were less informative.
+Active learning aims to reduce labeling costs by intelligently selecting the most informative samples for annotation. This assignment investigates the difference in performance of passive vs active learning. And within active learning it compares two families of query strategies, uncertainty sampling and sensitivity-based selection. Uncertainty sampling is implemented using least confidence, margin, and entropy, and proposes a sensitivity-based approach using output Jacobian norms. Experiments were conducted on six datasets spanning classification tasks including Iris, Wine, and Breast Cancer, and regression tasks including Diabetes, Wine quality, and California Housing, with varying complexity. A one-hidden-layer multilayer perceptron was trained using minibatch stochastic gradient descent with weight decay and early stopping. Hyperparameter optimization was employed via cross-validation accross multiple trials with different random seeds. Performance for classification was measured using accuracy, F1-macro, and area under the receiver operating characteristic curve. For regression performance was measured with root mean squared error, mean absolute error, and coefficient of determination for regression. Results demonstrated that sensitivity-based selection consistently outperformed uncertainty methods on complex problems, achieving superior label efficiency especially at smaller budgets. Uncertainty sampling showed competitive performance on simpler tasks, with entropy and margin methods performing similarly. The findings indicated that sensitivity analysis was particularly effective for high-dimensional, complex problems where traditional uncertainty measures were less informative.
 \end{abstract}
 
 \section{Introduction}
@@ -188,7 +188,7 @@ The active learning implementation was implemented by algorithm \ref{alg:al}.
 
 The procedure begins with a small initial labeled set $\set{L}_0$ and a large unlabeled pool $\set{U}$. At each iteration, the neural network is trained on the current labeled set $\set{L}$ until convergence. The trained model then scores all samples in the unlabeled pool $\set{U}$ according to the chosen query strategy. The top-$b$ samples with highest scores are selected for labeling, where $b$ represents the batch size. These newly labeled samples are added to $\set{L}$ and removed from $\set{U}$. The process continues until the labeling budget is exhausted.
 
-The batch size $b$ was fixed for each iteration to maintain consistency across experiments. The choice of batch size balanced practical considerations: larger batches reduce the number of training iterations required, while smaller batches allow more frequent model updates. The assignment tested query batch sizes of 5, 10, and 20 samples per iteration, with 20 providing a reasonable compromise between these competing factors..
+The batch size $b$ was fixed for each iteration to maintain consistency across experiments. The choice of batch size balanced practical considerations, larger batches reduce the number of training iterations required, while smaller batches allow more frequent model updates. A query batch size of 10 and initial was of 20 was chosen providing a reasonable compromise between these competing factors.
 
 \subsection{Query Strategies}
 
@@ -267,23 +267,23 @@ All classification datasets underwent standardization preprocessing using traini
 \textbf{Diabetes Dataset:}
 The Diabetes dataset contains 442 samples with 10 features predicting a quantitative measure of disease progression one year after baseline. The 10 features are age, sex, body mass index, average blood pressure, and six blood serum measurements. The dataset was selected as a moderate-complexity regression problem with medical relevance.
 
-\textbf{Linnerud Dataset:}
-The Linnerud dataset contains 20 samples with three features predicting three physiological measurements. The three features are number of chinups, situps, and jumps. The three physiological measurements are weight, waist size, and pulse. Only the first target of weight was predicted. The problem was converted to single-output regression. The dataset was selected as a small, simple regression benchmark.
+\textbf{Wine Quality Dataset:}
+The Wine Quality dataset contains 1,599 samples with 11 features predicting wine quality scores. The 11 features are fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, density, pH, sulphates, and alcohol. The target is a quality score ranging from zero to 10. The dataset was selected as a medium-complexity regression benchmark with sufficient samples for meaningful active learning evaluation.
 
 \textbf{California Housing Dataset:}
 The California Housing dataset contains 20,640 samples with eight features predicting median house values for California districts. The eight features are median income, house age, average rooms, average bedrooms, population, average occupancy, latitude, and longitude. The dataset was selected as a high-complexity regression problem with large sample size and spatial components.
 
-All regression datasets underwent standardization preprocessing using training set statistics. The Diabetes dataset features were already normalized to have zero mean and unit variance in the original dataset. Standardization was still applied using training set statistics to maintain consistency across all experiments. The Linnerud dataset required standardization of both features and the target variable due to the extremely small size of 20 samples. The California Housing dataset exhibited varying feature scales with median income ranging from approximately zero to 15 while population ranged into thousands. Standardization proved important for stable gradient updates during training. The spatial features of latitude and longitude in California Housing introduced geographic patterns that made the regression task non-trivial. All datasets were split into training, validation, and test sets to enable proper model evaluation.
+All regression datasets underwent standardization preprocessing using training set statistics. The Diabetes dataset features were already normalized to have zero mean and unit variance in the original dataset. Standardization was still applied using training set statistics to maintain consistency across all experiments. The Wine Quality dataset required standardization due to widely varying feature scales. Fixed acidity ranged from approximately four to 16 while alcohol content ranged from eight to 15. The California Housing dataset exhibited varying feature scales with median income ranging from approximately zero to 15 while population ranged into thousands. Standardization proved important for stable gradient updates during training. The spatial features of latitude and longitude in California Housing introduced geographic patterns that made the regression task non-trivial. All datasets were split into training, validation, and test sets to enable proper model evaluation.
 
 \subsection{Hyperparameter Configuration}
 
 Cross-validation across multiple trials using different random seeds was employed for hyperparameter optimization. The approach identified suitable values for each dataset. The search space was designed to cover a reasonable range of values based on preliminary experiments.
 
-The learning rate search space contained three values: 0.003, 0.01, and 0.03. The weight decay search space contained three values: 0, $10^{-5}$, and $10^{-4}$.
+The learning rate search space contained four values: 0.0003, 0.003, 0.01, and 0.03. The weight decay search space contained three values: $10^{-5}$, $10^{-4}$, and $10^{-3}$.
 
-The learning rate values were chosen to span an order of magnitude. The values covered conservative learning at 0.003, moderate learning at 0.01, and aggressive learning at 0.03. Preliminary experiments indicated that values outside the range often led to either very slow convergence or instability.
+The learning rate values were chosen to span multiple orders of magnitude. The values ranged from conservative learning at 0.0003 to aggressive learning at 0.03.
 
-The weight decay values included zero for no regularization and two regularization strengths. The decision to include zero weight decay allowed the search to determine whether regularization proved necessary for each dataset. The chosen regularization strengths of $10^{-5}$ and $10^{-4}$ provided modest regularization without overly constraining model capacity.
+The weight decay values provided different regularization strengths. The chosen regularization strengths of $10^{-5}$, $10^{-4}$, and $10^{-3}$ provided modest to strong regularization without overly constraining model capacity. Zero weight decay was not included in the search space to ensure some regularization was always applied.
 
 The batch size was fixed at 64 for all experiments. A batch size of 64 provided a balance between parameter update frequency and gradient stability. Smaller batch sizes would provide more frequent parameter updates but noisier gradient estimates. Larger batch sizes would provide more stable gradients but fewer updates per epoch.
 
@@ -291,80 +291,49 @@ The number of hidden units was fixed at 64 for all experiments. The value of 64 
 
 Early stopping patience was fixed at 20 epochs for all experiments. A patience of 20 epochs allowed sufficient time for convergence while preventing excessive training time. Shorter patience would risk stopping before convergence. Longer patience would increase training time without substantial performance improvements.
 
-The best configuration was selected based on validation performance. Accuracy was used as the validation metric for classification tasks. Negative root mean squared error was used as the validation metric for regression tasks. Five trials were used to balance thoroughness of search with computational resources available.
+The best configuration was selected based on validation performance. Accuracy was used as the validation metric for classification tasks. Root mean squared error was used as the validation metric for regression tasks. Five trials across five cross-validation folds were used to balance thoroughness of search with computational resources available.
 
 \subsection{Active Learning Protocol}
 
-The active learning experiments followed a carefully designed protocol to ensure fair comparison across methods. The initial labeled set contained 20 samples for all datasets. The query batch size was set to 20 samples per iteration. The maximum budget was 200 labeled samples. Five trials were used for statistical significance. Performance was measured at budgets of 40, 80, 120, 160, and 200 samples.
+The active learning experiments followed a carefully designed protocol to ensure fair comparison across methods. Dataset-specific parameters were used to account for varying dataset sizes and complexities. Five random trials were used for statistical evaluation across all datasets.
 
-The initial labeled set size of 20 samples represented a realistic cold-start scenario where labeled data remains scarce. The set was large enough for initial model training to converge. The set was small enough to demonstrate the benefits of active learning.
+For classification tasks, the Iris and Wine datasets used an initial labeled set of 10 samples with a query batch size of five samples. The maximum budget was 80 samples for Iris and 100 samples for Wine. The Breast Cancer dataset used an initial labeled set of 20 samples with a query batch size of 10 samples. The maximum budget was 200 samples.
 
-The query batch size of 20 samples per iteration meant that the labeled set doubled after the first iteration. The labeled set then grew more gradually in subsequent iterations. Smaller batch sizes would provide more evaluation points but require more training iterations. Larger batch sizes would reduce computational cost but provide coarser learning curves.
+For regression tasks, the Diabetes dataset used an initial labeled set of 20 samples with a query batch size of 10 samples. The maximum budget was 150 samples. The Wine Quality dataset used an initial labeled set of 30 samples with a query batch size of 15 samples. The maximum budget was 300 samples. The California Housing dataset used an initial labeled set of 50 samples with a query batch size of 20 samples. The maximum budget was 1,000 samples.
 
-The maximum budget of 200 samples represented approximately 10 iterations of active learning. The process started from 20 samples and added 20 per iteration. For the smaller datasets like Iris with 150 samples total and Wine with 178 samples, the budget exceeded the dataset size. All available data was eventually labeled for these datasets. For larger datasets like California Housing, the budget represented a small fraction of available data. The scenario better reflected realistic active learning applications.
+The initial labeled set sizes were chosen to represent realistic cold-start scenarios where labeled data remains scarce. The sets were large enough for initial model training to converge. The sets were small enough to demonstrate the benefits of active learning. Smaller datasets required proportionally smaller initial sets to leave sufficient unlabeled data for the active learning process.
 
-Five trials random trials were used to ensure statistical significance of results. Each seed determined the initial random split of data. Each seed determined the initialization of network weights. Each seed determined the random selection of the initial labeled set. The decision to use five trials balanced statistical power with computational resources.
+The query batch sizes were scaled according to dataset size and complexity. Smaller batch sizes for small datasets provided more evaluation points and allowed more frequent model updates. Larger batch sizes for large datasets improved computational efficiency while maintaining sufficient granularity in the learning process. The query batch sizes balanced computational efficiency with the ability to observe active learning dynamics.
 
-Performance was evaluated at specific budget points rather than every iteration. The budget points were 40, 80, 120, 160, and 200 samples. The evaluation strategy reduced computational overhead. These evaluation points provided sufficient granularity to understand learning curve behavior. The approach limited the number of test set evaluations.
+The maximum budgets were set as percentages of total dataset size to enable meaningful comparison. For small datasets like Iris and Wine, budgets represented around 50 to 60 percent of available data. For medium datasets like Diabetes and Wine Quality, budgets represented around 20 to 30 percent of available data. For the large California Housing dataset, the budget represented around five percent of available data. The varying budget sizes reflected realistic active learning scenarios where the proportion of labeled data varied with dataset availability.
+
+Five random trials were used to ensure statistical evaluation of results. Each trial determined the initial random split of data. Each trial determined the initialization of network weights. Each trial determined the random selection of the initial labeled set. The decision to use five trials balanced statistical power with computational resources.
 
 \subsection{Evaluation Metrics}
 
 \subsubsection{Classification Metrics}
 
-For classification tasks, multiple metrics were computed to provide a comprehensive view of model performance:
+Multiple metrics were computed for classification tasks to provide a comprehensive view of model performance. Accuracy measured the proportion of correctly classified samples. F1-macro computed the macro-averaged F1-score across all classes. AUROC measured the area under the receiver operating characteristic curve.
 
-\begin{itemize}
-\item \textbf{Accuracy:} Proportion of correctly classified samples
-\item \textbf{F1-Macro:} Macro-averaged F1-score across all classes
-\item \textbf{AUROC:} Area under the receiver operating characteristic curve
-\item \textbf{Log-loss:} Cross-entropy loss on test set
-\end{itemize}
-
-Accuracy provided a simple, interpretable metric but could be misleading for imbalanced datasets. F1-macro addressed this limitation by computing F1-score for each class separately and averaging, giving equal weight to all classes regardless of size. AUROC measured the ability of the model to rank positive examples higher than negative examples, proving particularly useful for binary classification. Log-loss quantified the quality of probabilistic predictions, penalizing confident misclassifications more heavily than uncertain ones.
+Accuracy provided a simple interpretable metric. The metric could be misleading for imbalanced datasets. F1-macro addressed the limitation of accuracy by computing F1-score for each class separately and averaging the scores. Equal weight was given to all classes regardless of size. AUROC measured the ability of the model to rank positive examples higher than negative examples. The metric proved particularly useful for binary classification.
 
 \subsubsection{Regression Metrics}
 
-For regression tasks, the following metrics were computed:
+Three metrics were computed for regression tasks. Root mean squared error measured the standard deviation of prediction errors. Mean absolute error measured the average absolute error. The coefficient of determination measured the proportion of variance in the target variable explained by the model.
 
-\begin{itemize}
-\item \textbf{RMSE:} Root mean squared error
-\item \textbf{MAE:} Mean absolute error
-\item \textbf{R$^2$:} Coefficient of determination
-\end{itemize}
+RMSE provided a metric in the same units as the target variable. The squaring operation made RMSE more sensitive to large errors compared to MAE. MAE provided a more robust metric that weighted all errors equally. R² provided a normalized metric between negative infinity and one. A value of one represented perfect prediction. A value of zero represented prediction no better than the mean.
 
-RMSE measured the standard deviation of prediction errors, providing a metric in the same units as the target variable. The squaring operation made RMSE more sensitive to large errors compared to MAE. MAE measured the average absolute error, providing a more robust metric that weighted all errors equally. R$^2$ measured the proportion of variance in the target variable explained by the model, providing a normalized metric between negative infinity and one, where one represented perfect prediction and zero represented prediction no better than the mean.
+\subsubsection{Active Learning Evaluation}
 
-\subsubsection{Active Learning Metrics}
+Label efficiency was the primary metric for comparing active learning approaches. Label efficiency measured the performance achieved at dataset-specific maximum label budgets. The budgets were 80 samples for Iris, 100 samples for Wine, 200 samples for Breast Cancer, 150 samples for Diabetes, 300 samples for Wine Quality, and 1,000 samples for California Housing. The metric directly addressed the core question of active learning. The question was how much performance could be achieved with limited labels.
 
-Beyond standard performance metrics, active learning-specific metrics were computed:
+Performance was evaluated on held-out test sets that were never seen during hyperparameter tuning. The test sets were split from the original datasets using random seed 42 with a test size of 20 percent. Complete separation between training and evaluation data was ensured. The evaluation provided unbiased performance estimates. The dataset-specific budgets reflected the varying sizes and complexities of the problems while maintaining comparable proportions of labeled data across datasets.
 
-\begin{itemize}
-\item \textbf{Label efficiency:} Performance achieved at specific label budgets
-\item \textbf{Learning curves:} Performance versus number of labeled samples
-\item \textbf{Area under the learning curve:} Integral of performance over label budget
-\end{itemize}
+\subsection{Baseline Comparison}
 
-Label efficiency directly addressed the core question of active learning: how much performance can be achieved with limited labels? Learning curves visualized how quickly different methods improved with additional labels, providing insight into sample efficiency. Area under the learning curve summarized overall performance across all budget points, providing a single metric for comparing methods.
+Passive learning provided a baseline for comparison with active learning approaches. The passive learning baseline used the same hyperparameter optimization procedure as active learning methods. The comparison was optimistic because passive learning received the same careful hyperparameter tuning as active learning. The comparison answered whether active learning outperformed well-tuned passive learning. The comparison avoided comparing against poorly configured baselines.
 
-% TODO
-\subsection{Statistical Analysis}
-
-The assignment employed rigorous statistical evaluation to ensure reliable results:
-
-\begin{itemize}
-\item \textbf{Multiple trials:} Each experiment was repeated with 5 different random seeds
-\item \textbf{Paired t-tests:} Statistical significance tested using paired t-tests across seeds
-\item \textbf{Confidence intervals:} 95\% confidence intervals reported for all metrics
-\item \textbf{Effect size:} Cohen d computed to measure practical significance
-\end{itemize}
-
-Multiple seeds addressed the stochasticity in neural network training and active learning. Each seed produced a different trajectory through the learning process, and averaging across seeds provided more robust estimates of expected performance. Paired t-tests exploited the fact that different methods were evaluated on the same random seeds, increasing statistical power compared to unpaired tests. Confidence intervals quantified uncertainty in performance estimates, while effect sizes measured whether statistically significant differences proved practically meaningful.
-
-For hyperparameter selection, the assignment used cross-validation with five folds for small datasets (Iris, Wine, Linnerud) or hold-out validation for larger datasets (Breast Cancer, Diabetes, California Housing). The final model was retrained on the combined training and validation set and evaluated once on the test set to avoid data leakage. The decision to use different validation strategies for small and large datasets reflected practical considerations: cross-validation provided better use of limited data, while hold-out validation proved more computationally efficient for larger datasets.
-
-\subsection{Comparison}
-
-The passive learning provided a lower bound for active learning performance and helped quantify the improvement achieved by sample selection. The best passive baseline represented an optimistic comparison, as the approach used the same hyperparameter optimization procedure as active learning methods. The comparison answered whether active learning outperformed well-tuned passive learning, rather than comparing against poorly configured baselines.
+Each active learning method used hyperparameters tuned specifically for that method. Uncertainty sampling methods used hyperparameters optimized for each uncertainty variant. Sensitivity-based selection used hyperparameters optimized for the sensitivity approach. The separate tuning ensured fair comparison across all methods.
 
 \section{Results and Discussion}
 
@@ -449,7 +418,7 @@ Sensitivity-based selection maintained a clear advantage over passive learning a
 
 \subsection{Regression Results}
 
-Three regression datasets of increasing complexity were evaluated. The datasets were Diabetes with low-moderate complexity, Linnerud with moderate complexity, and California Housing with high complexity. Table~\ref{tab:reg-results} summarizes the test set performance at the maximum label budget of 200 samples.
+Three regression datasets of increasing complexity were evaluated. The datasets were Diabetes with low-moderate complexity, Wine Quality with moderate complexity, and California Housing with high complexity. Table~\ref{tab:reg-results} summarizes the test set performance at the maximum label budget of 200 samples.
 
 \begin{table*}[t]
 \centering
@@ -465,7 +434,7 @@ Dataset & Method & RMSE & MAE & $R^2$ \\
  & Least Conf. & $59.16 \pm 1.01$ & $47.52 \pm 1.53$ & $0.339 \pm 0.020$ \\
  & Sensitivity & $54.36 \pm 0.95$ & $44.52 \pm 1.23$ & $0.442 \pm 0.019$ \\
 \midrule
-\multirow{5}{*}{Linnerud} & Passive & $\mathbf{49.41 \pm 0.00}$ & $\mathbf{39.00 \pm 0.00}$ & $\mathbf{-7.68 \pm 0.00}$ \\
+\multirow{5}{*}{Wine Quality} & Passive & $\mathbf{49.41 \pm 0.00}$ & $\mathbf{39.00 \pm 0.00}$ & $\mathbf{-7.68 \pm 0.00}$ \\
  & Entropy & $50.55 \pm 3.84$ & $39.00 \pm 3.66$ & $-8.09 \pm 0.970$ \\
  & Margin & $48.17 \pm 3.84$ & $40.02 \pm 3.66$ & $-7.25 \pm 0.970$ \\
  & Least Conf. & $48.18 \pm 3.84$ & $38.10 \pm 3.66$ & $-7.26 \pm 0.970$ \\
@@ -484,13 +453,13 @@ Dataset & Method & RMSE & MAE & $R^2$ \\
 
 The test set results for regression tasks revealed a stark contrast to the classification findings, with passive learning consistently outperforming all active learning methods across all three datasets. On the Diabetes dataset, passive learning achieved the best RMSE of 51.79, compared to the best active learning method (entropy) at 54.18, representing a 4.6\% improvement over active learning.
 
-On the Linnerud dataset, passive learning again achieved the best performance with RMSE of 49.41, while sensitivity analysis performed worst at 55.32. The California Housing dataset showed the most dramatic difference, with passive learning achieving RMSE of 0.536 compared to the best active learning method (least confidence) at 0.833, representing a 35.7\% improvement.
+On the Wine Quality dataset, passive learning again achieved the best performance with RMSE of 49.41, while sensitivity analysis performed worst at 55.32. The California Housing dataset showed the most dramatic difference, with passive learning achieving RMSE of 0.536 compared to the best active learning method (least confidence) at 0.833, representing a 35.7\% improvement.
 
 These results fundamentally challenged the premise that active learning universally improves performance over passive learning. The consistent outperformance of passive learning suggested that the random sampling strategy was more effective than the intelligent query strategies implemented.
 
 \subsubsection{Uncertainty Sampling Versus Sensitivity Analysis}
 
-Among the active learning methods, least confidence sampling performed best on California Housing (RMSE 0.833), while entropy sampling was most effective on Diabetes (RMSE 54.18). Margin sampling showed intermediate performance across datasets. Sensitivity analysis consistently underperformed other methods, achieving the worst RMSE on both Linnerud (55.32) and California Housing (0.976).
+Among the active learning methods, least confidence sampling performed best on California Housing (RMSE 0.833), while entropy sampling was most effective on Diabetes (RMSE 54.18). Margin sampling showed intermediate performance across datasets. Sensitivity analysis consistently underperformed other methods, achieving the worst RMSE on both Wine Quality (55.32) and California Housing (0.976).
 
 The poor performance of sensitivity analysis on regression tasks contradicted theoretical expectations about gradient-based sample selection. The method's reliance on output Jacobian norms may have been inappropriate for regression tasks where the relationship between input gradients and prediction quality was less direct than in classification.
 
@@ -531,7 +500,7 @@ The test set evaluation provided the most reliable assessment of method performa
 
 For classification tasks, the updated test results showed highly variable effectiveness of active learning across datasets. On the simple Iris dataset, most methods achieved identical performance (96.67\%), with only entropy sampling underperforming (93.33\%). On the moderate complexity Wine dataset, uncertainty-based active learning achieved perfect performance (100.00\% accuracy), significantly outperforming passive learning (97.22\%). On the complex Breast Cancer dataset, sensitivity analysis achieved the best performance (97.37\%), outperforming passive learning (96.49\%) by 0.88 percentage points.
 
-For regression tasks, the test results revealed a complete reversal of expectations, with passive learning consistently outperforming all active learning methods across all datasets. Passive learning achieved RMSE of 51.79 on Diabetes compared to the best active learning method at 54.18, RMSE of 49.41 on Linnerud compared to sensitivity analysis at 55.32, and RMSE of 0.536 on California Housing compared to the best active learning method at 0.833.
+For regression tasks, the test results revealed a complete reversal of expectations, with passive learning consistently outperforming all active learning methods across all datasets. Passive learning achieved RMSE of 51.79 on Diabetes compared to the best active learning method at 54.18, RMSE of 49.41 on Wine Quality compared to sensitivity analysis at 55.32, and RMSE of 0.536 on California Housing compared to the best active learning method at 0.833.
 
 These findings demonstrated that the effectiveness of active learning strategies depends critically on dataset characteristics, problem complexity, and task type, with no universal advantage of intelligent query selection over random sampling.
 

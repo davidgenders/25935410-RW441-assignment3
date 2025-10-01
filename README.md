@@ -13,8 +13,8 @@ The project compares different active learning strategies:
 
 ```
 ├── src/
-│   ├── combined_run_cls.py      # Classification experiments runner
-│   ├── combined_run_reg.py      # Regression experiments runner
+│   ├── tune_classification.py      # Classification experiments runner
+│   ├── tune_regression.py      # Regression experiments runner
 │   ├── compare_classification.ipynb
 │   ├── compare_regression.ipynb
 │   └── nn/                       # Neural network modules
@@ -38,7 +38,7 @@ The project compares different active learning strategies:
 
 ### Regression
 - Diabetes
-- Linnerud
+- Wine Quality
 - California Housing
 
 ## Installation
@@ -53,24 +53,24 @@ pip install -r requirements.txt
 
 ### Run Classification Experiments
 ```bash
-python src/combined_run_cls.py --method all
+python src/tune_classification.py --method all
 ```
 
 ### Run Regression Experiments
 ```bash
-python src/combined_run_reg.py --method all
+python src/tune_regression.py --method all
 ```
 
 ### Run Specific Methods
 ```bash
 # Only passive learning
-python src/combined_run_cls.py --method passive
+python src/tune_classification.py --method passive
 
 # Only uncertainty-based active learning
-python src/combined_run_cls.py --method uncertainty
+python src/tune_classification.py --method uncertainty
 
 # Only sensitivity-based active learning
-python src/combined_run_cls.py --method sensitivity
+python src/tune_classification.py --method sensitivity
 ```
 
 ## Active Learning Strategies

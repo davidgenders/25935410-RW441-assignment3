@@ -41,6 +41,12 @@ N_FOLDS = 5  # Number of CV folds
 INITS = [20]
 QUERIES = [10]
 
+ACTIVE_PARAMS = {
+    'iris': {'init': 10, 'query': 5, 'budget': 80},
+    'wine': {'init': 10, 'query': 5, 'budget': 100},
+    'breast_cancer': {'init': 20, 'query': 10, 'budget': 200},
+}
+
 def nan_to_none(obj):
     if isinstance(obj, float) and math.isnan(obj):
         return None
@@ -413,7 +419,7 @@ class ClassificationTuner:
             for method in METHODS:
                 print(f"\nMethod: {method}")
 
-                result = self.evaluate_curve_uncertainty(dataset, method, BUDGETS)
+                result = self.evaluate_curve_uncertainty(dataset, method)
                 self.results['uncertainty'][dataset][method] = result
 
             checkpoint['completed_datasets'] += 1
@@ -431,8 +437,9 @@ class ClassificationTuner:
 
         print("Active Uncertainty Done")
 
-    def evaluate_curve_uncertainty(self, dataset: str, method: str, budgets: List[int]) -> Dict:
-        tune_budget = sorted(budgets)[len(budgets)//2]
+    def evaluate_curve_uncertainty(self, dataset: str, method: str) -> Dict:
+        dataset_budgets = [ACTIVE_PARAMS[dataset]['budgets']]
+        tune_budget = sorted(dataset_budgets)[len(dataset_budgets)//2]
 
         best_config, best_acc = self.tune_hparams_uncertainty(dataset, method, tune_budget)
         tcfg, acfg_base, hidden_units = best_config
@@ -456,10 +463,10 @@ class ClassificationTuner:
                 'curve': {}
             }
 
-        pbar = tqdm(total=len(budgets), desc=f"Curve {dataset}-{method}",
+        pbar = tqdm(total=len(dataset_budgets), desc=f"Curve {dataset}-{method}",
                     initial=len(results['curve']), position=0, leave=True)
 
-        for max_labels in budgets:
+        for max_labels in dataset_budgets:
             if str(max_labels) in results['curve']:
                 pbar.update(1)
                 continue
@@ -508,7 +515,11 @@ class ClassificationTuner:
     def tune_hparams_uncertainty(self, dataset: str, method: str, tune_budget: int) -> tuple:
         best_acc = -float('inf')
         best_config = None
-        
+
+        dataset_params = ACTIVE_PARAMS[dataset]
+        init = dataset_params['inits']
+        query = dataset_params['queries']
+            
         total_configs = len(LR) * len(WD) * len(HIDDEN) * len(BS) * len(INITS) * len(QUERIES)
         
         # Load checkpoint if exists
@@ -535,7 +546,7 @@ class ClassificationTuner:
                     initial=completed_configs, position=0, leave=True)
         
         config_idx = completed_configs
-        for lr, wd, hidden, bs, init, query in itertools.product(LR, WD, HIDDEN, BS, INITS, QUERIES):
+        for lr, wd, hidden, bs in itertools.product(LR, WD, HIDDEN, BS):
             if config_idx < completed_configs:
                 config_idx += 1
                 pbar.update(1)
@@ -598,7 +609,7 @@ class ClassificationTuner:
                 continue
 
             print(f"\nProcessing {dataset}")
-            result = self.evaluate_curve_sensitivity(dataset, BUDGETS)
+            result = self.evaluate_curve_sensitivity(dataset)
             self.results['sensitivity'][dataset] = result
 
             checkpoint['completed_datasets'] += 1
@@ -614,8 +625,10 @@ class ClassificationTuner:
         if os.path.exists(checkpoint_file):
             os.remove(checkpoint_file)
 
-    def evaluate_curve_sensitivity(self, dataset: str, budgets: List[int]) -> Dict:
-        tune_budget = sorted(budgets)[len(budgets)//2]
+    def evaluate_curve_sensitivity(self, dataset: str) -> Dict:
+        
+        dataset_budgets = [ACTIVE_PARAMS[dataset]['budgets']]
+        tune_budget = sorted(dataset_budgets)[len(dataset_budgets)//2]
 
         best_config, best_acc = self.tune_hparams_sensitivity(dataset, tune_budget)
         tcfg, acfg_base, hidden_units = best_config
@@ -639,10 +652,10 @@ class ClassificationTuner:
             }
             print("Starting fresh curve evaluation")
 
-        pbar = tqdm(total=len(budgets), desc=f"Curve {dataset}-sensitivity",
+        pbar = tqdm(total=len(dataset_budgets), desc=f"Curve {dataset}-sensitivity",
                     initial=len(results['curve']), position=0, leave=True)
 
-        for max_labels in budgets:
+        for max_labels in dataset_budgets:
             if str(max_labels) in results['curve']:
                 pbar.update(1)
                 continue
@@ -691,6 +704,10 @@ class ClassificationTuner:
     def tune_hparams_sensitivity(self, dataset: str, tune_budget: int) -> tuple:
         best_acc = -float('inf')
         best_config = None
+
+        dataset_params = ACTIVE_PARAMS[dataset]
+        init = dataset_params['inits']
+        query = dataset_params['queries']
         
         total_configs = len(LR) * len(WD) * len(HIDDEN) * len(BS) * len(INITS) * len(QUERIES)
         
@@ -717,7 +734,7 @@ class ClassificationTuner:
                     initial=completed_configs, position=0, leave=True)
         
         config_idx = completed_configs
-        for lr, wd, hidden, bs, init, query in itertools.product(LR, WD, HIDDEN, BS, INITS, QUERIES):
+        for lr, wd, hidden, bs in itertools.product(LR, WD, HIDDEN, BS):
             if config_idx < completed_configs:
                 config_idx += 1
                 pbar.update(1)
