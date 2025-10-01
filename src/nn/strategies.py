@@ -38,7 +38,6 @@ def uncertainty_sampling(
             scores = (1.0 - max_conf)
         return top_k_indices(scores, k)
     else:
-        # Regression (ALUS): lacking predictive variance without MC-dropout; proxy by small magnitude
         scores = -torch.abs(logits.squeeze(-1))
         return top_k_indices(scores, k)
 
@@ -48,13 +47,6 @@ def sensitivity_scores(
     inputs: torch.Tensor,
     target_dim: int | None = None,
 ) -> torch.Tensor:
-    """
-    SASLA-inspired sensitivity: use Jacobian Frobenius norm ||d f(x) / d x||_F.
-
-    - For classification (C>1), compute Jacobian for all outputs and take Frobenius norm per sample.
-    - For regression (C=1), this reduces to the gradient L2 norm.
-    - Optionally, if target_dim is provided for classification, use only that output's gradient.
-    """
     model.eval()
     x = inputs.clone().detach().requires_grad_(True)
     outputs = model(x)

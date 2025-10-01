@@ -34,8 +34,6 @@ def make_classification_split(name: Literal["iris", "wine", "breast_cancer"], te
         ds = datasets.load_wine()
     elif name == "breast_cancer":
         ds = datasets.load_breast_cancer()
-    else:
-        raise ValueError("Unknown classification dataset")
 
     x_train, x_test, y_train, y_test = train_test_split(ds.data, ds.target, test_size=test_size, random_state=seed, stratify=ds.target)
     x_train, x_val, y_train, y_val = train_test_split(x_train, y_train, test_size=val_size, random_state=seed, stratify=y_train)
@@ -58,12 +56,10 @@ def make_regression_split(name: Literal["diabetes", "linnerud", "california"], t
         y = ds.target.astype(np.float32)
     elif name == "linnerud":
         ds = datasets.load_linnerud()
-        y = ds.target[:, 0].astype(np.float32)  # use one target (Weight) to keep scalar
+        y = ds.target[:, 0].astype(np.float32)
     elif name == "california":
         ds = datasets.fetch_california_housing()
         y = ds.target.astype(np.float32)
-    else:
-        raise ValueError("Unknown regression dataset")
 
     x = ds.data.astype(np.float32)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=test_size, random_state=seed)

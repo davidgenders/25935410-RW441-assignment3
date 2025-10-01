@@ -13,7 +13,6 @@ class TrainConfig:
     batch_size: int = 64
     max_epochs: int = 200
     patience: int = 20
-    device: str = "cpu"
 
 
 def _move_batch(batch: Tuple[torch.Tensor, torch.Tensor], device: str):
@@ -28,7 +27,7 @@ def train_passive(
     loss_fn: nn.Module,
     config: TrainConfig,
 ) -> Dict[str, float]:
-    device = torch.device(config.device)
+    device = torch.device("cpu")
     model.to(device)
     # Use Adam for more stable optimization across settings
     optimizer = torch.optim.Adam(
@@ -38,13 +37,14 @@ def train_passive(
     best_val = float("inf")
     best_state: Optional[Dict[str, torch.Tensor]] = None
     epochs_no_improve = 0
+    train_epoch_loss, val_epoch_loss, val_epoch_loss, epoch = 0, 0, 0 ,0
 
     for epoch in range(config.max_epochs):
         model.train()
         total_loss = 0.0
         num_examples = 0
         for batch in train_loader:
-            xb, yb = _move_batch(batch, config.device)
+            xb, yb = _move_batch(batch, "cpu")
             optimizer.zero_grad(set_to_none=True)
             preds = model(xb)
             loss = loss_fn(preds, yb)
@@ -66,7 +66,7 @@ def train_passive(
                 total_val = 0.0
                 num_val = 0
                 for batch in val_loader:
-                    xb, yb = _move_batch(batch, config.device)
+                    xb, yb = _move_batch(batch, "cpu")
                     preds = model(xb)
                     loss = loss_fn(preds, yb)
                     total_val += loss.item() * xb.shape[0]

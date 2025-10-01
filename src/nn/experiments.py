@@ -17,7 +17,6 @@ class ActiveConfig:
     initial_labeled: int = 20
     query_batch: int = 10
     max_labels: int = 200
-    device: str = "cpu"
 
 
 def _build_loaders(train: TensorDataset, val: TensorDataset, test: TensorDataset, batch_size: int) -> Tuple[DataLoader, DataLoader, DataLoader]:
@@ -41,7 +40,7 @@ def run_passive_classification(dataset_name: Literal["iris", "wine", "breast_can
     loss_fn = nn.CrossEntropyLoss()
     loaders = _build_loaders(train, val, test, config.batch_size)
     train_passive(model, loaders[0], loaders[1], loss_fn, config)
-    return evaluate_classification(model, loaders[2], device=config.device)
+    return evaluate_classification(model, loaders[2])
 
 
 def run_passive_regression(dataset_name: Literal["diabetes", "linnerud", "california"], hidden_units: int = 64, config: TrainConfig = TrainConfig()) -> Dict[str, float]:
@@ -52,7 +51,7 @@ def run_passive_regression(dataset_name: Literal["diabetes", "linnerud", "califo
     loss_fn = nn.MSELoss()
     loaders = _build_loaders(train, val, test, config.batch_size)
     train_passive(model, loaders[0], loaders[1], loss_fn, config)
-    return evaluate_regression(model, loaders[2], device=config.device)
+    return evaluate_regression(model, loaders[2])
 
 
 def run_active_classification(
@@ -91,12 +90,12 @@ def run_active_classification(
         if strategy == "uncertainty":
             sel = uncertainty_sampling(
                 model,
-                x_pool[unlabeled].to(train_config.device),
+                x_pool[unlabeled].to("cpu"),
                 active_config.query_batch,
                 UncertaintySamplingConfig(mode="classification", method=uncertainty_method),
             )
         else:
-            sel = sensitivity_sampling(model, x_pool[unlabeled].to(train_config.device), active_config.query_batch)
+            sel = sensitivity_sampling(model, x_pool[unlabeled].to("cpu"), active_config.query_batch)
 
         newly_selected = unlabeled[sel]
         labeled = torch.unique(torch.cat([labeled, newly_selected]))
@@ -113,7 +112,7 @@ def run_active_classification(
     test_ds = TensorDataset(split.x_test, split.y_test)
     loaders = _build_loaders(final_train, val_ds, test_ds, train_config.batch_size)
     train_passive(model, loaders[0], loaders[1], loss_fn, train_config)
-    return evaluate_classification(model, loaders[2], device=train_config.device)
+    return evaluate_classification(model, loaders[2])
 
 
 def run_active_regression(
@@ -150,12 +149,12 @@ def run_active_regression(
         if strategy == "uncertainty":
             sel = uncertainty_sampling(
                 model,
-                x_pool[unlabeled].to(train_config.device),
+                x_pool[unlabeled].to("cpu"),
                 active_config.query_batch,
                 UncertaintySamplingConfig(mode="regression", method=uncertainty_method),
             )
         else:
-            sel = sensitivity_sampling(model, x_pool[unlabeled].to(train_config.device), active_config.query_batch)
+            sel = sensitivity_sampling(model, x_pool[unlabeled].to("cpu"), active_config.query_batch)
 
         newly_selected = unlabeled[sel]
         labeled = torch.unique(torch.cat([labeled, newly_selected]))
@@ -171,6 +170,6 @@ def run_active_regression(
     test_ds = TensorDataset(split.x_test, split.y_test)
     loaders = _build_loaders(final_train, val_ds, test_ds, train_config.batch_size)
     train_passive(model, loaders[0], loaders[1], loss_fn, train_config)
-    return evaluate_regression(model, loaders[2], device=train_config.device)
+    return evaluate_regression(model, loaders[2])
 
 

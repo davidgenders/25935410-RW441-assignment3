@@ -5,14 +5,6 @@ from torch import nn
 
 
 class OneHiddenMLP(nn.Module):
-    """
-    One-hidden-layer MLP supporting classification and regression.
-
-    - Hidden activation is configurable
-    - Output activation is identity (regression) or optional (classification handled via loss)
-    - Weight decay is applied via optimizer configuration, not inside the model
-    """
-
     def __init__(
         self,
         input_dim: int,
@@ -40,7 +32,6 @@ class OneHiddenMLP(nn.Module):
     def _reset_parameters(self) -> None:
         for module in self.modules():
             if isinstance(module, nn.Linear):
-                # Use Kaiming init tailored for ReLU activations to avoid overly large scales
                 nn.init.kaiming_uniform_(module.weight, a=0.0, nonlinearity="relu")
                 if module.bias is not None:
                     nn.init.zeros_(module.bias)

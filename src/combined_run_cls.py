@@ -25,11 +25,11 @@ import time
 import argparse
 import math
 
-from alnn.models import OneHiddenMLP
-from alnn.training import train_passive, TrainConfig
-from alnn.evaluation import evaluate_classification
-from alnn.experiments import ActiveConfig, run_active_classification
-from alnn.data import make_classification_split, to_datasets
+from nn.models import OneHiddenMLP
+from nn.training import train_passive, TrainConfig
+from nn.evaluation import evaluate_classification
+from nn.experiments import ActiveConfig, run_active_classification
+from nn.data import make_classification_split, to_datasets
 
 from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
@@ -79,8 +79,6 @@ def nan_to_none(obj):
 
 
 class ClassificationTuner:
-    """Main class for classification hyperparameter tuning."""
-    
     def __init__(self, datasets: List[str] = None):
         self.datasets = datasets or DATASETS
         self.results = {}
@@ -93,33 +91,28 @@ class ClassificationTuner:
                 'weight_decay': train_config.weight_decay,
                 'batch_size': train_config.batch_size,
                 'max_epochs': train_config.max_epochs,
-                'patience': train_config.patience,
-                'device': train_config.device
+                'patience': train_config.patience
             },
             'active_config': {
                 'initial_labeled': active_config.initial_labeled,
                 'query_batch': active_config.query_batch,
-                'max_labels': active_config.max_labels,
-                'device': active_config.device
+                'max_labels': active_config.max_labels
             },
             'hidden_units': hidden_units
         }
     
     def _deserialize_config(self, serialized_config):
-        """Convert JSON-serializable format back to config objects."""
         train_config = TrainConfig(
             learning_rate=serialized_config['train_config']['learning_rate'],
             weight_decay=serialized_config['train_config']['weight_decay'],
             batch_size=serialized_config['train_config']['batch_size'],
             max_epochs=serialized_config['train_config']['max_epochs'],
-            patience=serialized_config['train_config']['patience'],
-            device=serialized_config['train_config']['device']
+            patience=serialized_config['train_config']['patience']
         )
         active_config = ActiveConfig(
             initial_labeled=serialized_config['active_config']['initial_labeled'],
             query_batch=serialized_config['active_config']['query_batch'],
-            max_labels=serialized_config['active_config']['max_labels'],
-            device=serialized_config['active_config']['device']
+            max_labels=serialized_config['active_config']['max_labels']
         )
         hidden_units = serialized_config['hidden_units']
         return train_config, active_config, hidden_units
@@ -187,12 +180,12 @@ class ClassificationTuner:
                 # Train model
                 model = OneHiddenMLP(input_dim=X_train_scaled.shape[1], hidden_units=hidden, output_dim=len(np.unique(y_train_val)))
                 loss_fn = nn.CrossEntropyLoss()
-                config = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20, device='cpu')
+                config = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20)
                 
                 train_passive(model, train_loader, val_loader, loss_fn, config)
                 
                 # Evaluate on validation set only
-                metrics = evaluate_classification(model, val_loader, device='cpu')
+                metrics = evaluate_classification(model, val_loader)
                 trial_metrics.append(metrics)
             
             # Average across folds for this trial
@@ -242,10 +235,14 @@ class ClassificationTuner:
                 y_train_tensor = torch.tensor(y_train, dtype=torch.long)
                 X_val_tensor = torch.tensor(X_val_scaled, dtype=torch.float32)
                 y_val_tensor = torch.tensor(y_val, dtype=torch.long)
+
+                val_subset = TensorDataset(X_val_tensor, y_val_tensor)
                 
+                val_loader = DataLoader(val_subset, batch_size=bs, shuffle=False)
+
                 # Simulate active learning on the train set
                 train_config = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, 
-                                         max_epochs=200, patience=20, device='cpu')
+                                         max_epochs=200, patience=20)
                 
                 # Create initial labeled pool
                 num_train = X_train_scaled.shape[0]
@@ -259,10 +256,8 @@ class ClassificationTuner:
                 while labeled_indices.numel() < min(budget, num_train):
                     # Train model on current labeled set
                     train_subset = TensorDataset(x_pool[labeled_indices], y_pool[labeled_indices])
-                    val_subset = TensorDataset(X_val_tensor, y_val_tensor)
                     
                     train_loader = DataLoader(train_subset, batch_size=bs, shuffle=True)
-                    val_loader = DataLoader(val_subset, batch_size=bs, shuffle=False)
                     
                     model = OneHiddenMLP(input_dim=X_train_scaled.shape[1], hidden_units=hidden, output_dim=len(np.unique(y_train_val)))
                     loss_fn = nn.CrossEntropyLoss()
@@ -274,16 +269,16 @@ class ClassificationTuner:
                     
                     # Query selection
                     if strategy == 'uncertainty':
-                        from alnn.strategies import uncertainty_sampling, UncertaintySamplingConfig
+                        from nn.strategies import uncertainty_sampling, UncertaintySamplingConfig
                         sel = uncertainty_sampling(
                             model,
-                            x_pool[unlabeled_indices].to(train_config.device),
+                            x_pool[unlabeled_indices].to("cpu"),
                             query,
                             UncertaintySamplingConfig(mode="classification", method=method),
                         )
-                    elif strategy == 'sensitivity':
-                        from alnn.strategies import sensitivity_sampling
-                        sel = sensitivity_sampling(model, x_pool[unlabeled_indices].to(train_config.device), query)
+                    else:
+                        from nn.strategies import sensitivity_sampling
+                        sel = sensitivity_sampling(model, x_pool[unlabeled_indices].to("cpu"), query)
                     
                     # Update labeled and unlabeled sets
                     newly_selected = unlabeled_indices[sel]
@@ -306,13 +301,19 @@ class ClassificationTuner:
                 train_passive(final_model, final_train_loader, final_val_loader, loss_fn, train_config)
                 
                 # Evaluate on validation set
-                metrics = evaluate_classification(final_model, final_val_loader, device='cpu')
+                metrics = evaluate_classification(final_model, final_val_loader)
                 trial_metrics.append(metrics)
+
+            # Average across folds for this trial
+            trial_avg = {}
+            for key in trial_metrics[0].keys():
+                trial_avg[key] = np.mean([m[key] for m in trial_metrics])
+            all_metrics.append(trial_avg)
         
         # Average across trials and folds
         final_metrics = {}
-        for key in trial_metrics[0].keys():
-            values = [m[key] for m in trial_metrics]
+        for key in all_metrics[0].keys():
+            values = [m[key] for m in all_metrics]
             final_metrics[f'{key}_mean'] = float(np.mean(values))
             final_metrics[f'{key}_std'] = float(np.std(values, ddof=1))
         
@@ -539,8 +540,7 @@ class ClassificationTuner:
                 acfg = ActiveConfig(
                     initial_labeled=acfg_base.initial_labeled,
                     query_batch=acfg_base.query_batch,
-                    max_labels=max_labels,
-                    device=acfg_base.device
+                    max_labels=max_labels
                 )
                 res = run_active_classification(
                     dataset_name=dataset,
@@ -617,8 +617,8 @@ class ClassificationTuner:
             
             if avg_acc > best_acc:
                 best_acc = avg_acc
-                train_cfg = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20, device='cpu')
-                active_cfg = ActiveConfig(initial_labeled=init, query_batch=query, max_labels=tune_budget, device='cpu')
+                train_cfg = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20)
+                active_cfg = ActiveConfig(initial_labeled=init, query_batch=query, max_labels=tune_budget)
                 best_config = (train_cfg, active_cfg, hidden)
             
             # Update progress bar
@@ -741,8 +741,7 @@ class ClassificationTuner:
                 acfg = ActiveConfig(
                     initial_labeled=acfg_base.initial_labeled,
                     query_batch=acfg_base.query_batch,
-                    max_labels=max_labels,
-                    device=acfg_base.device
+                    max_labels=max_labels
                 )
                 res = run_active_classification(
                     dataset_name=dataset,
@@ -819,8 +818,8 @@ class ClassificationTuner:
             
             if avg_acc > best_acc:
                 best_acc = avg_acc
-                train_cfg = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20, device='cpu')
-                active_cfg = ActiveConfig(initial_labeled=init, query_batch=query, max_labels=tune_budget, device='cpu')
+                train_cfg = TrainConfig(learning_rate=lr, weight_decay=wd, batch_size=bs, max_epochs=200, patience=20)
+                active_cfg = ActiveConfig(initial_labeled=init, query_batch=query, max_labels=tune_budget)
                 best_config = (train_cfg, active_cfg, hidden)
             
             # Update progress bar
