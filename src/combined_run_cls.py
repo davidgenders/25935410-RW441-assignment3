@@ -46,15 +46,15 @@ os.makedirs(DATA_DIR, exist_ok=True)
 
 DATASETS = ['iris', 'wine', 'breast_cancer']
 METHODS = ['entropy', 'margin', 'least_confidence']
-LR = [3e-3, 1e-2, 3e-2]
-WD = [0.0, 1e-5, 1e-4]
+LR = [3e-4, 3e-3, 1e-2, 3e-2]
+WD = [1e-5, 1e-4, 1e-3]
 HIDDEN = [64]
 BS = [64]
-BUDGETS = [40, 80, 120, 160, 200]
+BUDGETS = [200]
 N_TRIALS = 5  # Number of random seeds for each config
 N_FOLDS = 5  # Number of CV folds
-INITS = [10, 20, 40]
-QUERIES = [5, 10, 20]
+INITS = [20]
+QUERIES = [10]
 
 # DATASETS = ['iris', 'wine', 'breast_cancer']
 # METHODS = ['entropy', 'margin', 'least_confidence']
