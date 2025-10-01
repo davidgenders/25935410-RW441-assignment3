@@ -5,9 +5,9 @@ This repository contains implementations and experiments for active learning met
 ## Overview
 
 The project compares different active learning strategies:
-- **Passive Learning**: Traditional supervised learning with all labeled data
-- **Uncertainty-based Active Learning**: Query samples based on model uncertainty
-- **Sensitivity-based Active Learning**: Query samples based on gradient sensitivity
+- Passive Learning: Traditional supervised learning with all labeled data
+- Uncertainty-based Active Learning: Query samples based on model uncertainty
+- Sensitivity-based Active Learning: Query samples based on gradient sensitivity
 
 ## Project Structure
 
@@ -26,17 +26,8 @@ The project compares different active learning strategies:
 │       └── training.py          # Training utilities
 ├── data/                        # Experiment results and checkpoints
 ├── report/                      # LaTeX report and figures
-├── papers/                      # Reference papers
 └── requirements.txt             # Python dependencies
 ```
-
-## Features
-
-- **Cross-validation**: Robust evaluation with multiple trials and CV folds
-- **Checkpoint system**: Resume interrupted experiments
-- **Progress tracking**: Visual progress bars with tqdm
-- **Multiple datasets**: Support for various classification and regression datasets
-- **Flexible configuration**: Easy hyperparameter tuning
 
 ## Datasets
 
@@ -85,9 +76,9 @@ python src/combined_run_cls.py --method sensitivity
 ## Active Learning Strategies
 
 ### Uncertainty Sampling
-- **Entropy**: Select samples with highest prediction entropy
-- **Margin**: Select samples with smallest margin between top-2 classes
-- **Least Confidence**: Select samples with lowest maximum probability
+- Entropy: Select samples with highest prediction entropy
+- Margin: Select samples with smallest margin between top-2 classes
+- Least Confidence: Select samples with lowest maximum probability
 
 ### Sensitivity Sampling
 - Select samples with highest gradient sensitivity

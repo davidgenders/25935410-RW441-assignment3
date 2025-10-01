@@ -844,15 +844,86 @@ class RegressionTuner:
 
     def plot_uncertainty_results(self):
         """Plot uncertainty-based active learning results."""
-        # Implementation for plotting uncertainty results
-        # This would create learning curves for each dataset and method
-        pass
+        if 'uncertainty' not in self.results:
+            return
+            
+        fig, axes = plt.subplots(1, len(self.datasets), figsize=(5*len(self.datasets), 5))
+        if len(self.datasets) == 1:
+            axes = [axes]
+            
+        for i, dataset in enumerate(self.datasets):
+            if dataset not in self.results['uncertainty']:
+                continue
+                
+            ax = axes[i]
+            
+            # Plot each uncertainty method
+            for method in METHODS:
+                if method not in self.results['uncertainty'][dataset]:
+                    continue
+                    
+                curve_data = self.results['uncertainty'][dataset][method]['curve']
+                budgets = sorted([int(k) for k in curve_data.keys()])
+                
+                if not budgets:
+                    continue
+                    
+                rmses = [curve_data[str(b)]['rmse_mean'] for b in budgets]
+                rmse_stds = [curve_data[str(b)]['rmse_std'] for b in budgets]
+                
+                ax.errorbar(budgets, rmses, yerr=rmse_stds, 
+                           label=f'{method}', marker='o', capsize=3)
+            
+            ax.set_xlabel('Number of Labels')
+            ax.set_ylabel('RMSE')
+            ax.set_title(f'{dataset.title()} Dataset')
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        plt.savefig(os.path.join(FIGURES_DIR, 'uncertainty_reg_learning_curves.png'), dpi=200)
+        plt.close()
+        
+        print(f'Saved uncertainty learning curves to {FIGURES_DIR}')
 
     def plot_sensitivity_results(self):
         """Plot sensitivity-based active learning results."""
-        # Implementation for plotting sensitivity results
-        # This would create learning curves for each dataset
-        pass
+        if 'sensitivity' not in self.results:
+            return
+            
+        fig, axes = plt.subplots(1, len(self.datasets), figsize=(5*len(self.datasets), 5))
+        if len(self.datasets) == 1:
+            axes = [axes]
+            
+        for i, dataset in enumerate(self.datasets):
+            if dataset not in self.results['sensitivity']:
+                continue
+                
+            ax = axes[i]
+            
+            curve_data = self.results['sensitivity'][dataset]['curve']
+            budgets = sorted([int(k) for k in curve_data.keys()])
+            
+            if not budgets:
+                continue
+                
+            rmses = [curve_data[str(b)]['rmse_mean'] for b in budgets]
+            rmse_stds = [curve_data[str(b)]['rmse_std'] for b in budgets]
+            
+            ax.errorbar(budgets, rmses, yerr=rmse_stds, 
+                       label='sensitivity', marker='o', capsize=3, color='red')
+            
+            ax.set_xlabel('Number of Labels')
+            ax.set_ylabel('RMSE')
+            ax.set_title(f'{dataset.title()} Dataset')
+            ax.legend()
+            ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        plt.savefig(os.path.join(FIGURES_DIR, 'sensitivity_reg_learning_curves.png'), dpi=200)
+        plt.close()
+        
+        print(f'Saved sensitivity learning curves to {FIGURES_DIR}')
 
     def run_all(self):
         
