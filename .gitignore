@@ -1,6 +1,7 @@
 *_old*
 *.pdf
 *.bbl
+!report.pdf
 *.synctex.gz
 *.aux
 *.log
