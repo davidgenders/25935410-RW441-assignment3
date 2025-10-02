@@ -1,0 +1,86 @@
+{
+  "diabetes": {
+    "best_cfg": {
+      "train_config": {
+        "learning_rate": 0.0003,
+        "weight_decay": 1e-05,
+        "batch_size": 64,
+        "max_epochs": 200,
+        "patience": 20
+      },
+      "active_config": {
+        "initial_labeled": 20,
+        "query_batch": 10,
+        "max_labels": 150
+      },
+      "hidden_units": 64
+    },
+    "best_metric": 161.7026770861797,
+    "curve": {
+      "150": {
+        "rmse_mean": 139.17496354314602,
+        "mae_mean": 123.07345123291016,
+        "r2_mean": -2.6601187229156493,
+        "rmse_std": 5.267297503105089,
+        "mae_std": 0.37055198902544956,
+        "r2_std": 0.28365357336113534
+      }
+    }
+  },
+  "wine_quality": {
+    "best_cfg": {
+      "train_config": {
+        "learning_rate": 0.0003,
+        "weight_decay": 1e-05,
+        "batch_size": 64,
+        "max_epochs": 200,
+        "patience": 20
+      },
+      "active_config": {
+        "initial_labeled": 30,
+        "query_batch": 15,
+        "max_labels": 300
+      },
+      "hidden_units": 64
+    },
+    "best_metric": 1.471719126191133,
+    "curve": {
+      "300": {
+        "rmse_mean": 0.8920420857943924,
+        "mae_mean": 0.6966280698776245,
+        "r2_mean": -0.24523231983184815,
+        "rmse_std": 0.15011435752627886,
+        "mae_std": 0.11988990409505441,
+        "r2_std": 0.4461536859774574
+      }
+    }
+  },
+  "california": {
+    "best_cfg": {
+      "train_config": {
+        "learning_rate": 0.01,
+        "weight_decay": 0.001,
+        "batch_size": 64,
+        "max_epochs": 200,
+        "patience": 20
+      },
+      "active_config": {
+        "initial_labeled": 50,
+        "query_batch": 20,
+        "max_labels": 1000
+      },
+      "hidden_units": 64
+    },
+    "best_metric": 0.9275084745486823,
+    "curve": {
+      "1000": {
+        "rmse_mean": 1.002120717516358,
+        "mae_mean": 0.6380074381828308,
+        "r2_mean": 0.20858819484710694,
+        "rmse_std": 0.20256847909888195,
+        "mae_std": 0.05802327389508465,
+        "r2_std": 0.3432381456069026
+      }
+    }
+  }
+}

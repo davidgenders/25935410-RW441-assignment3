@@ -775,126 +775,6 @@ class ClassificationTuner:
         print(f"Best config for {dataset}-sensitivity: accuracy={best_acc:.4f}")
         return best_config, best_acc
 
-    def plot_results(self):
-        # Plot passive learning results
-        if 'passive' in self.results:
-            self.plot_passive_results()
-        
-        # Plot active learning results
-        if 'uncertainty' in self.results:
-            self.plot_uncertainty_results()
-        
-        if 'sensitivity' in self.results:
-            self.plot_sensitivity_results()
-
-    def plot_passive_results(self):
-        plt.figure(figsize=(8, 5))
-        datasets_plot = []
-        means_plot = []
-        stds_plot = []
-
-        for dataset in self.datasets:
-            if dataset in self.results['passive']:
-                best_idx = None
-                best_acc = -np.inf
-                for i, h in enumerate(self.results['passive'][dataset]['history']):
-                    if h['accuracy_mean'] > best_acc:
-                        best_acc = h['accuracy_mean']
-                        best_idx = i
-                
-                datasets_plot.append(dataset)
-                means_plot.append(self.results['passive'][dataset]['history'][best_idx]['accuracy_mean'])
-                stds_plot.append(self.results['passive'][dataset]['history'][best_idx]['accuracy_std'])
-
-        plt.errorbar(datasets_plot, means_plot, yerr=stds_plot, fmt='o', capsize=5, capthick=2)
-        plt.ylabel('Accuracy (best ± std)')
-        plt.title('Passive Classification Best Accuracy (CV + Multiple Trials)')
-        plt.grid(True, alpha=0.3)
-        plt.tight_layout()
-        plt.savefig(os.path.join(FIGURES_DIR, 'passive_cls_best_accuracy.png'), dpi=200)
-        plt.close()
-
-    def plot_uncertainty_results(self):
-        if 'uncertainty' not in self.results:
-            return
-            
-        fig, axes = plt.subplots(1, len(self.datasets), figsize=(5*len(self.datasets), 5))
-        if len(self.datasets) == 1:
-            axes = [axes]
-            
-        for i, dataset in enumerate(self.datasets):
-            if dataset not in self.results['uncertainty']:
-                continue
-                
-            ax = axes[i]
-            
-            # Plot each uncertainty method
-            for method in METHODS:
-                if method not in self.results['uncertainty'][dataset]:
-                    continue
-                    
-                curve_data = self.results['uncertainty'][dataset][method]['curve']
-                budgets = sorted([int(k) for k in curve_data.keys()])
-                
-                if not budgets:
-                    continue
-                    
-                accuracies = [curve_data[str(b)]['accuracy_mean'] for b in budgets]
-                acc_stds = [curve_data[str(b)]['accuracy_std'] for b in budgets]
-                
-                ax.errorbar(budgets, accuracies, yerr=acc_stds, 
-                           label=f'{method}', marker='o', capsize=3)
-            
-            ax.set_xlabel('Number of Labels')
-            ax.set_ylabel('Accuracy')
-            ax.set_title(f'{dataset.title()} Dataset')
-            ax.legend()
-            ax.grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(FIGURES_DIR, 'uncertainty_cls_learning_curves.png'), dpi=200)
-        plt.close()
-        
-        print(f'Saved uncertainty learning curves to {FIGURES_DIR}')
-
-    def plot_sensitivity_results(self):
-        if 'sensitivity' not in self.results:
-            return
-            
-        fig, axes = plt.subplots(1, len(self.datasets), figsize=(5*len(self.datasets), 5))
-        if len(self.datasets) == 1:
-            axes = [axes]
-            
-        for i, dataset in enumerate(self.datasets):
-            if dataset not in self.results['sensitivity']:
-                continue
-                
-            ax = axes[i]
-            
-            curve_data = self.results['sensitivity'][dataset]['curve']
-            budgets = sorted([int(k) for k in curve_data.keys()])
-            
-            if not budgets:
-                continue
-                
-            accuracies = [curve_data[str(b)]['accuracy_mean'] for b in budgets]
-            acc_stds = [curve_data[str(b)]['accuracy_std'] for b in budgets]
-            
-            ax.errorbar(budgets, accuracies, yerr=acc_stds, 
-                       label='sensitivity', marker='o', capsize=3, color='red')
-            
-            ax.set_xlabel('Number of Labels')
-            ax.set_ylabel('Accuracy')
-            ax.set_title(f'{dataset.title()} Dataset')
-            ax.legend()
-            ax.grid(True, alpha=0.3)
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(FIGURES_DIR, 'sensitivity_cls_learning_curves.png'), dpi=200)
-        plt.close()
-        
-        print(f'Saved sensitivity learning curves to {FIGURES_DIR}')
-
     def run_all(self):
         
         # Run passive learning
@@ -905,9 +785,6 @@ class ClassificationTuner:
         
         # Run sensitivity-based active learning
         self.run_sensitivity_tuning()
-        
-        # Plot all results
-        self.plot_results()
         
         print("All completed")
 
