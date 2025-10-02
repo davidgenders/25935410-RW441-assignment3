@@ -1,0 +1,177 @@
+{
+  "completed_datasets": 2,
+  "results": {
+    "diabetes": {
+      "entropy": {
+        "best_cfg": {
+          "train_config": {
+            "learning_rate": 0.0003,
+            "weight_decay": 0.0001,
+            "batch_size": 64,
+            "max_epochs": 200,
+            "patience": 20
+          },
+          "active_config": {
+            "initial_labeled": 20,
+            "query_batch": 10,
+            "max_labels": 150
+          },
+          "hidden_units": 64
+        },
+        "best_metric": 162.14637455842484,
+        "curve": {
+          "150": {
+            "rmse_mean": 143.93629014011645,
+            "mae_mean": 125.82961730957031,
+            "r2_mean": -2.9104363441467287,
+            "rmse_std": 0.7334151281979833,
+            "mae_std": 1.1686337072641155,
+            "r2_std": 0.03981381498484038
+          }
+        }
+      },
+      "margin": {
+        "best_cfg": {
+          "train_config": {
+            "learning_rate": 0.0003,
+            "weight_decay": 0.0001,
+            "batch_size": 64,
+            "max_epochs": 200,
+            "patience": 20
+          },
+          "active_config": {
+            "initial_labeled": 20,
+            "query_batch": 10,
+            "max_labels": 150
+          },
+          "hidden_units": 64
+        },
+        "best_metric": 162.14637455842484,
+        "curve": {
+          "150": {
+            "rmse_mean": 143.93629014011645,
+            "mae_mean": 125.82961730957031,
+            "r2_mean": -2.9104363441467287,
+            "rmse_std": 0.7334151281979833,
+            "mae_std": 1.1686337072641155,
+            "r2_std": 0.03981381498484038
+          }
+        }
+      },
+      "least_confidence": {
+        "best_cfg": {
+          "train_config": {
+            "learning_rate": 0.0003,
+            "weight_decay": 0.0001,
+            "batch_size": 64,
+            "max_epochs": 200,
+            "patience": 20
+          },
+          "active_config": {
+            "initial_labeled": 20,
+            "query_batch": 10,
+            "max_labels": 150
+          },
+          "hidden_units": 64
+        },
+        "best_metric": 162.14637455842484,
+        "curve": {
+          "150": {
+            "rmse_mean": 143.93629014011645,
+            "mae_mean": 125.82961730957031,
+            "r2_mean": -2.9104363441467287,
+            "rmse_std": 0.7334151281979833,
+            "mae_std": 1.1686337072641155,
+            "r2_std": 0.03981381498484038
+          }
+        }
+      }
+    },
+    "wine_quality": {
+      "entropy": {
+        "best_cfg": {
+          "train_config": {
+            "learning_rate": 0.0003,
+            "weight_decay": 0.001,
+            "batch_size": 64,
+            "max_epochs": 200,
+            "patience": 20
+          },
+          "active_config": {
+            "initial_labeled": 30,
+            "query_batch": 15,
+            "max_labels": 300
+          },
+          "hidden_units": 64
+        },
+        "best_metric": 2.0890511260959745,
+        "curve": {
+          "300": {
+            "rmse_mean": 1.668139939907891,
+            "mae_mean": 1.2906858444213867,
+            "r2_mean": -3.264738416671753,
+            "rmse_std": 0.07365807794791238,
+            "mae_std": 0.04366384013222063,
+            "r2_std": 0.3744438260473766
+          }
+        }
+      },
+      "margin": {
+        "best_cfg": {
+          "train_config": {
+            "learning_rate": 0.0003,
+            "weight_decay": 0.001,
+            "batch_size": 64,
+            "max_epochs": 200,
+            "patience": 20
+          },
+          "active_config": {
+            "initial_labeled": 30,
+            "query_batch": 15,
+            "max_labels": 300
+          },
+          "hidden_units": 64
+        },
+        "best_metric": 2.0890511260959745,
+        "curve": {
+          "300": {
+            "rmse_mean": 1.668139939907891,
+            "mae_mean": 1.2906858444213867,
+            "r2_mean": -3.264738416671753,
+            "rmse_std": 0.07365807794791238,
+            "mae_std": 0.04366384013222063,
+            "r2_std": 0.3744438260473766
+          }
+        }
+      },
+      "least_confidence": {
+        "best_cfg": {
+          "train_config": {
+            "learning_rate": 0.0003,
+            "weight_decay": 0.001,
+            "batch_size": 64,
+            "max_epochs": 200,
+            "patience": 20
+          },
+          "active_config": {
+            "initial_labeled": 30,
+            "query_batch": 15,
+            "max_labels": 300
+          },
+          "hidden_units": 64
+        },
+        "best_metric": 2.0890511260959745,
+        "curve": {
+          "300": {
+            "rmse_mean": 1.668139939907891,
+            "mae_mean": 1.2906858444213867,
+            "r2_mean": -3.264738416671753,
+            "rmse_std": 0.07365807794791238,
+            "mae_std": 0.04366384013222063,
+            "r2_std": 0.3744438260473766
+          }
+        }
+      }
+    }
+  }
+}

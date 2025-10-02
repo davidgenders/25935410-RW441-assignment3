@@ -1,0 +1,19 @@
+{
+  "completed_configs": 5,
+  "best_acc": 0.8498085992044622,
+  "best_config": {
+    "train_config": {
+      "learning_rate": 0.0003,
+      "weight_decay": 1e-05,
+      "batch_size": 64,
+      "max_epochs": 200,
+      "patience": 20
+    },
+    "active_config": {
+      "initial_labeled": 50,
+      "query_batch": 20,
+      "max_labels": 1000
+    },
+    "hidden_units": 64
+  }
+}
