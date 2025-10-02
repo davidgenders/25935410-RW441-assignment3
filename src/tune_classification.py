@@ -438,7 +438,7 @@ class ClassificationTuner:
         print("Active Uncertainty Done")
 
     def evaluate_curve_uncertainty(self, dataset: str, method: str) -> Dict:
-        dataset_budgets = [ACTIVE_PARAMS[dataset]['budgets']]
+        dataset_budgets = [ACTIVE_PARAMS[dataset]['budget']]
         tune_budget = sorted(dataset_budgets)[len(dataset_budgets)//2]
 
         best_config, best_acc = self.tune_hparams_uncertainty(dataset, method, tune_budget)
@@ -517,8 +517,8 @@ class ClassificationTuner:
         best_config = None
 
         dataset_params = ACTIVE_PARAMS[dataset]
-        init = dataset_params['inits']
-        query = dataset_params['queries']
+        init = dataset_params['init']
+        query = dataset_params['query']
             
         total_configs = len(LR) * len(WD) * len(HIDDEN) * len(BS) * len(INITS) * len(QUERIES)
         
@@ -627,7 +627,7 @@ class ClassificationTuner:
 
     def evaluate_curve_sensitivity(self, dataset: str) -> Dict:
         
-        dataset_budgets = [ACTIVE_PARAMS[dataset]['budgets']]
+        dataset_budgets = [ACTIVE_PARAMS[dataset]['budget']]
         tune_budget = sorted(dataset_budgets)[len(dataset_budgets)//2]
 
         best_config, best_acc = self.tune_hparams_sensitivity(dataset, tune_budget)
@@ -706,8 +706,8 @@ class ClassificationTuner:
         best_config = None
 
         dataset_params = ACTIVE_PARAMS[dataset]
-        init = dataset_params['inits']
-        query = dataset_params['queries']
+        init = dataset_params['init']
+        query = dataset_params['query']
         
         total_configs = len(LR) * len(WD) * len(HIDDEN) * len(BS) * len(INITS) * len(QUERIES)
         

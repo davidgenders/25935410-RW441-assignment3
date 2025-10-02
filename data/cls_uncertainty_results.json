@@ -1,0 +1,278 @@
+{
+  "iris": {
+    "entropy": {
+      "best_cfg": {
+        "train_config": {
+          "learning_rate": 0.03,
+          "weight_decay": 0.001,
+          "batch_size": 64,
+          "max_epochs": 200,
+          "patience": 20
+        },
+        "active_config": {
+          "initial_labeled": 10,
+          "query_batch": 5,
+          "max_labels": 80
+        },
+        "hidden_units": 64
+      },
+      "best_metric": 0.9633333333333333,
+      "curve": {
+        "80": {
+          "accuracy_mean": 0.96,
+          "f1_macro_mean": 0.9599331662489557,
+          "log_loss_mean": 0.12470544963087835,
+          "auroc_ovr_mean": 0.9960000000000001,
+          "accuracy_std": 0.014907119849998594,
+          "f1_macro_std": 0.014869758647367066,
+          "log_loss_std": 0.02483741516842855,
+          "auroc_ovr_std": 0.0014907119849998942
+        }
+      }
+    },
+    "margin": {
+      "best_cfg": {
+        "train_config": {
+          "learning_rate": 0.03,
+          "weight_decay": 0.001,
+          "batch_size": 64,
+          "max_epochs": 200,
+          "patience": 20
+        },
+        "active_config": {
+          "initial_labeled": 10,
+          "query_batch": 5,
+          "max_labels": 80
+        },
+        "hidden_units": 64
+      },
+      "best_metric": 0.9666666666666666,
+      "curve": {
+        "80": {
+          "accuracy_mean": 0.9666666666666666,
+          "f1_macro_mean": 0.9665831244778612,
+          "log_loss_mean": 0.10883468001692746,
+          "auroc_ovr_mean": 0.9956666666666667,
+          "accuracy_std": 1.2412670766236366e-16,
+          "f1_macro_std": 1.2412670766236366e-16,
+          "log_loss_std": 0.01625022509885172,
+          "auroc_ovr_std": 0.0014907119849998942
+        }
+      }
+    },
+    "least_confidence": {
+      "best_cfg": {
+        "train_config": {
+          "learning_rate": 0.03,
+          "weight_decay": 0.001,
+          "batch_size": 64,
+          "max_epochs": 200,
+          "patience": 20
+        },
+        "active_config": {
+          "initial_labeled": 10,
+          "query_batch": 5,
+          "max_labels": 80
+        },
+        "hidden_units": 64
+      },
+      "best_metric": 0.9633333333333333,
+      "curve": {
+        "80": {
+          "accuracy_mean": 0.96,
+          "f1_macro_mean": 0.9599331662489557,
+          "log_loss_mean": 0.1124067838192789,
+          "auroc_ovr_mean": 0.9966666666666667,
+          "accuracy_std": 0.014907119849998596,
+          "f1_macro_std": 0.014869758647367065,
+          "log_loss_std": 0.014319721641751897,
+          "auroc_ovr_std": 0.0
+        }
+      }
+    }
+  },
+  "wine": {
+    "entropy": {
+      "best_cfg": {
+        "train_config": {
+          "learning_rate": 0.01,
+          "weight_decay": 0.0001,
+          "batch_size": 64,
+          "max_epochs": 200,
+          "patience": 20
+        },
+        "active_config": {
+          "initial_labeled": 10,
+          "query_batch": 5,
+          "max_labels": 100
+        },
+        "hidden_units": 64
+      },
+      "best_metric": 0.9915763546798031,
+      "curve": {
+        "100": {
+          "accuracy_mean": 0.9722222222222221,
+          "f1_macro_mean": 0.970961887477314,
+          "log_loss_mean": 0.06815574524836948,
+          "auroc_ovr_mean": 1.0,
+          "accuracy_std": 1.2412670766236366e-16,
+          "f1_macro_std": 1.2412670766236366e-16,
+          "log_loss_std": 0.00746243968854334,
+          "auroc_ovr_std": 0.0
+        }
+      }
+    },
+    "margin": {
+      "best_cfg": {
+        "train_config": {
+          "learning_rate": 0.03,
+          "weight_decay": 0.001,
+          "batch_size": 64,
+          "max_epochs": 200,
+          "patience": 20
+        },
+        "active_config": {
+          "initial_labeled": 10,
+          "query_batch": 5,
+          "max_labels": 100
+        },
+        "hidden_units": 64
+      },
+      "best_metric": 0.9929556650246306,
+      "curve": {
+        "100": {
+          "accuracy_mean": 0.9666666666666666,
+          "f1_macro_mean": 0.9649176581299994,
+          "log_loss_mean": 0.08525055286389857,
+          "auroc_ovr_mean": 0.9995670995670995,
+          "accuracy_std": 0.012422599874998837,
+          "f1_macro_std": 0.013515307692194755,
+          "log_loss_std": 0.033536799568081116,
+          "auroc_ovr_std": 0.0005927733306333222
+        }
+      }
+    },
+    "least_confidence": {
+      "best_cfg": {
+        "train_config": {
+          "learning_rate": 0.01,
+          "weight_decay": 0.0001,
+          "batch_size": 64,
+          "max_epochs": 200,
+          "patience": 20
+        },
+        "active_config": {
+          "initial_labeled": 10,
+          "query_batch": 5,
+          "max_labels": 100
+        },
+        "hidden_units": 64
+      },
+      "best_metric": 0.9901477832512317,
+      "curve": {
+        "100": {
+          "accuracy_mean": 0.9722222222222221,
+          "f1_macro_mean": 0.970961887477314,
+          "log_loss_mean": 0.05481349169590671,
+          "auroc_ovr_mean": 1.0,
+          "accuracy_std": 1.2412670766236366e-16,
+          "f1_macro_std": 1.2412670766236366e-16,
+          "log_loss_std": 0.008138528977165329,
+          "auroc_ovr_std": 0.0
+        }
+      }
+    }
+  },
+  "breast_cancer": {
+    "entropy": {
+      "best_cfg": {
+        "train_config": {
+          "learning_rate": 0.03,
+          "weight_decay": 0.0001,
+          "batch_size": 64,
+          "max_epochs": 200,
+          "patience": 20
+        },
+        "active_config": {
+          "initial_labeled": 20,
+          "query_batch": 10,
+          "max_labels": 200
+        },
+        "hidden_units": 64
+      },
+      "best_metric": 0.9846153846153847,
+      "curve": {
+        "200": {
+          "accuracy_mean": 0.9543859649122807,
+          "f1_macro_mean": 0.9515003539952355,
+          "log_loss_mean": 0.19125466235687402,
+          "auroc_ovr_mean": 0.9892857142857142,
+          "accuracy_std": 0.009609167675529214,
+          "f1_macro_std": 0.009777848783559393,
+          "log_loss_std": 0.04440595054013793,
+          "auroc_ovr_std": 0.0023914926893868855
+        }
+      }
+    },
+    "margin": {
+      "best_cfg": {
+        "train_config": {
+          "learning_rate": 0.03,
+          "weight_decay": 0.001,
+          "batch_size": 64,
+          "max_epochs": 200,
+          "patience": 20
+        },
+        "active_config": {
+          "initial_labeled": 20,
+          "query_batch": 10,
+          "max_labels": 200
+        },
+        "hidden_units": 64
+      },
+      "best_metric": 0.9832967032967034,
+      "curve": {
+        "200": {
+          "accuracy_mean": 0.956140350877193,
+          "f1_macro_mean": 0.9533326364713874,
+          "log_loss_mean": 0.13327508621455286,
+          "auroc_ovr_mean": 0.9906746031746032,
+          "accuracy_std": 0.01860807318911969,
+          "f1_macro_std": 0.019377634869993894,
+          "log_loss_std": 0.03807860084818318,
+          "auroc_ovr_std": 0.002511921827358871
+        }
+      }
+    },
+    "least_confidence": {
+      "best_cfg": {
+        "train_config": {
+          "learning_rate": 0.03,
+          "weight_decay": 0.0001,
+          "batch_size": 64,
+          "max_epochs": 200,
+          "patience": 20
+        },
+        "active_config": {
+          "initial_labeled": 20,
+          "query_batch": 10,
+          "max_labels": 200
+        },
+        "hidden_units": 64
+      },
+      "best_metric": 0.9841758241758243,
+      "curve": {
+        "200": {
+          "accuracy_mean": 0.9578947368421051,
+          "f1_macro_mean": 0.955094255660437,
+          "log_loss_mean": 0.13648320034929576,
+          "auroc_ovr_mean": 0.9915343915343916,
+          "accuracy_std": 0.0039229262763154325,
+          "f1_macro_std": 0.004245351036221108,
+          "log_loss_std": 0.03594698824666296,
+          "auroc_ovr_std": 0.0023453205326054486
+        }
+      }
+    }
+  }
+}

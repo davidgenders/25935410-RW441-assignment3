@@ -13,10 +13,10 @@
 \usepackage{microtype}
 
 % ===== Useful macros to enforce notation rules =====
-\newcommand{\vect}[1]{\mathbf{#1}} % vectors bold, lowercase
-\newcommand{\matr}[1]{\mathbf{#1}} % matrices bold, uppercase
-\newcommand{\set}[1]{\mathrm{#1}}  % sets upper case, not bold
-\newcommand{\func}[1]{\mathrm{#1}} % functions lower case, not bold
+\newcommand{\vect}[1]{\mathbf{#1}}
+\newcommand{\matr}[1]{\mathbf{#1}}
+\newcommand{\set}[1]{\mathrm{#1}}
+\newcommand{\func}[1]{\mathrm{#1}}
 
 % ===== Student metadata =====
 \newcommand{\studentnumber}{25935410}
@@ -268,7 +268,7 @@ All classification datasets underwent standardization preprocessing using traini
 The Diabetes dataset contains 442 samples with 10 features predicting a quantitative measure of disease progression one year after baseline. The 10 features are age, sex, body mass index, average blood pressure, and six blood serum measurements. The dataset was selected as a moderate-complexity regression problem with medical relevance.
 
 \textbf{Wine Quality Dataset:}
-The Wine Quality dataset contains 1,599 samples with 11 features predicting wine quality scores. The 11 features are fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, density, pH, sulphates, and alcohol. The target is a quality score ranging from zero to 10. The dataset was selected as a medium-complexity regression benchmark with sufficient samples for meaningful active learning evaluation.
+The Wine Quality dataset contains 1,599 samples with 11 features predicting wine quality scores. The 11 features are fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, density, pH, sulphates, and alcohol. The target is a quality score ranging from zero to 10. The dataset was selected as a medium-complexity regression benchmark.
 
 \textbf{California Housing Dataset:}
 The California Housing dataset contains 20,640 samples with eight features predicting median house values for California districts. The eight features are median income, house age, average rooms, average bedrooms, population, average occupancy, latitude, and longitude. The dataset was selected as a high-complexity regression problem with large sample size and spatial components.
@@ -277,37 +277,27 @@ All regression datasets underwent standardization preprocessing using training s
 
 \subsection{Hyperparameter Configuration}
 
-Cross-validation across multiple trials using different random seeds was employed for hyperparameter optimization. The approach identified suitable values for each dataset. The search space was designed to cover a reasonable range of values based on preliminary experiments.
+Cross-validation across multiple trials using different random seeds was employed for hyperparameter optimization. The search space was designed to cover a reasonable range of values based on experiments.
 
-The learning rate search space contained four values: 0.0003, 0.003, 0.01, and 0.03. The weight decay search space contained three values: $10^{-5}$, $10^{-4}$, and $10^{-3}$.
+The learning rate search space contained four values: 0.0003, 0.003, 0.01, and 0.03. These values spanned multiple orders of magnitude from conservative to aggressive learning rates. The weight decay search space contained three values: $10^{-5}$, $10^{-4}$, and $10^{-3}$. These provided modest to strong regularization strengths without overly constraining model capacity. Zero weight decay was excluded to ensure regularization was always applied.
 
-The learning rate values were chosen to span multiple orders of magnitude. The values ranged from conservative learning at 0.0003 to aggressive learning at 0.03.
+The batch size was fixed at 64 for all experiments. This value balanced parameter update frequency with gradient stability. The number of hidden units was fixed at 64. This capacity exceeded the complexity requirements for all datasets. Weight decay prevented overfitting rather than relying on limited model capacity. Early stopping patience was fixed at 20 epochs. This allowed sufficient time for convergence while preventing excessive training time.
 
-The weight decay values provided different regularization strengths. The chosen regularization strengths of $10^{-5}$, $10^{-4}$, and $10^{-3}$ provided modest to strong regularization without overly constraining model capacity. Zero weight decay was not included in the search space to ensure some regularization was always applied.
-
-The batch size was fixed at 64 for all experiments. A batch size of 64 provided a balance between parameter update frequency and gradient stability. Smaller batch sizes would provide more frequent parameter updates but noisier gradient estimates. Larger batch sizes would provide more stable gradients but fewer updates per epoch.
-
-The number of hidden units was fixed at 64 for all experiments. The value of 64 hidden units provided sufficient model capacity for the datasets considered. The capacity exceeded the complexity requirements for all datasets. Weight decay prevented overfitting rather than relying on limited model capacity.
-
-Early stopping patience was fixed at 20 epochs for all experiments. A patience of 20 epochs allowed sufficient time for convergence while preventing excessive training time. Shorter patience would risk stopping before convergence. Longer patience would increase training time without substantial performance improvements.
-
-The best configuration was selected based on validation performance. Accuracy was used as the validation metric for classification tasks. Root mean squared error was used as the validation metric for regression tasks. Five trials across five cross-validation folds were used to balance thoroughness of search with computational resources available.
+The best configuration was selected based on validation performance using accuracy for classification and root mean squared error for regression. Five trials across five cross-validation folds provided 25 total evaluations per configuration.
 
 \subsection{Active Learning Protocol}
 
-The active learning experiments followed a carefully designed protocol to ensure fair comparison across methods. Dataset-specific parameters were used to account for varying dataset sizes and complexities. Five random trials were used for statistical evaluation across all datasets.
+The active learning experiments used dataset-specific parameters to account for varying sizes and complexities. Five random trials provided statistical evaluation across all datasets.
 
-For classification tasks, the Iris and Wine datasets used an initial labeled set of 10 samples with a query batch size of five samples. The maximum budget was 80 samples for Iris and 100 samples for Wine. The Breast Cancer dataset used an initial labeled set of 20 samples with a query batch size of 10 samples. The maximum budget was 200 samples.
+Classification tasks employed different parameters based on dataset size. Iris and Wine used 10 initial samples with five-sample query batches, reaching budgets of 80 and 100 samples respectively. Breast Cancer used 20 initial samples with 10-sample query batches, reaching a budget of 200 samples.
 
-For regression tasks, the Diabetes dataset used an initial labeled set of 20 samples with a query batch size of 10 samples. The maximum budget was 150 samples. The Wine Quality dataset used an initial labeled set of 30 samples with a query batch size of 15 samples. The maximum budget was 300 samples. The California Housing dataset used an initial labeled set of 50 samples with a query batch size of 20 samples. The maximum budget was 1,000 samples.
+Regression tasks scaled parameters according to dataset characteristics. Diabetes started with 20 samples and queried 10 per iteration up to 150 samples. Wine Quality started with 30 samples and queried 15 per iteration up to 300 samples. California Housing started with 50 samples and queried 20 per iteration up to 1,000 samples.
 
-The initial labeled set sizes were chosen to represent realistic cold-start scenarios where labeled data remains scarce. The sets were large enough for initial model training to converge. The sets were small enough to demonstrate the benefits of active learning. Smaller datasets required proportionally smaller initial sets to leave sufficient unlabeled data for the active learning process.
+Initial set sizes represented realistic cold-start scenarios where labeled data remains scarce while still providing sufficient samples for model convergence. Smaller datasets required proportionally smaller initial sets to preserve adequate unlabeled pools. Query batch sizes scaled with dataset complexity to balance computational efficiency against observation of active learning dynamics. Smaller batches for small datasets enabled more frequent model updates while larger batches for large datasets improved efficiency.
 
-The query batch sizes were scaled according to dataset size and complexity. Smaller batch sizes for small datasets provided more evaluation points and allowed more frequent model updates. Larger batch sizes for large datasets improved computational efficiency while maintaining sufficient granularity in the learning process. The query batch sizes balanced computational efficiency with the ability to observe active learning dynamics.
+Maximum budgets reflected realistic labeling scenarios as percentages of total dataset size. Small datasets allocated 50 to 60 percent of available data for labeling. Medium datasets allocated 20 to 30 percent. The large dataset allocated approximately five percent. These proportions reflected practical constraints where labeling budgets depend on dataset availability.
 
-The maximum budgets were set as percentages of total dataset size to enable meaningful comparison. For small datasets like Iris and Wine, budgets represented around 50 to 60 percent of available data. For medium datasets like Diabetes and Wine Quality, budgets represented around 20 to 30 percent of available data. For the large California Housing dataset, the budget represented around five percent of available data. The varying budget sizes reflected realistic active learning scenarios where the proportion of labeled data varied with dataset availability.
-
-Five random trials were used to ensure statistical evaluation of results. Each trial determined the initial random split of data. Each trial determined the initialization of network weights. Each trial determined the random selection of the initial labeled set. The decision to use five trials balanced statistical power with computational resources.
+Each of the five trials used different random seeds for data splitting, weight initialization, and initial labeled set selection. This approach quantified performance variability while balancing statistical power with computational resources.
 
 \subsection{Evaluation Metrics}
 
@@ -321,13 +311,13 @@ Accuracy provided a simple interpretable metric. The metric could be misleading 
 
 Three metrics were computed for regression tasks. Root mean squared error measured the standard deviation of prediction errors. Mean absolute error measured the average absolute error. The coefficient of determination measured the proportion of variance in the target variable explained by the model.
 
-RMSE provided a metric in the same units as the target variable. The squaring operation made RMSE more sensitive to large errors compared to MAE. MAE provided a more robust metric that weighted all errors equally. R² provided a normalized metric between negative infinity and one. A value of one represented perfect prediction. A value of zero represented prediction no better than the mean.
+RMSE provided a metric in the same units as the target variable. The squaring operation made RMSE more sensitive to large errors compared to MAE. MAE provided a more robust metric that weighted all errors equally. R$^2$ provided a normalized metric between negative infinity and one. A value of one represented perfect prediction. A value of zero represented prediction no better than the mean.
 
 \subsubsection{Active Learning Evaluation}
 
 Label efficiency was the primary metric for comparing active learning approaches. Label efficiency measured the performance achieved at dataset-specific maximum label budgets. The budgets were 80 samples for Iris, 100 samples for Wine, 200 samples for Breast Cancer, 150 samples for Diabetes, 300 samples for Wine Quality, and 1,000 samples for California Housing. The metric directly addressed the core question of active learning. The question was how much performance could be achieved with limited labels.
 
-Performance was evaluated on held-out test sets that were never seen during hyperparameter tuning. The test sets were split from the original datasets using random seed 42 with a test size of 20 percent. Complete separation between training and evaluation data was ensured. The evaluation provided unbiased performance estimates. The dataset-specific budgets reflected the varying sizes and complexities of the problems while maintaining comparable proportions of labeled data across datasets.
+Performance was evaluated on held-out test sets that were never seen during hyperparameter tuning. The test sets were split from the original datasets using random seed with a test size of 20 percent. Complete separation between training and evaluation data was ensured. The evaluation provided unbiased performance estimates. The dataset-specific budgets reflected the varying sizes and complexities of the problems while maintaining comparable proportions of labeled data across datasets.
 
 \subsection{Baseline Comparison}
 

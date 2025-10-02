@@ -1,0 +1,92 @@
+{
+  "iris": {
+    "best_cfg": {
+      "train_config": {
+        "learning_rate": 0.01,
+        "weight_decay": 0.001,
+        "batch_size": 64,
+        "max_epochs": 200,
+        "patience": 20
+      },
+      "active_config": {
+        "initial_labeled": 10,
+        "query_batch": 5,
+        "max_labels": 80
+      },
+      "hidden_units": 64
+    },
+    "best_metric": 0.96,
+    "curve": {
+      "80": {
+        "accuracy_mean": 0.9400000000000001,
+        "f1_macro_mean": 0.9399832915622388,
+        "log_loss_mean": 0.09403435803423395,
+        "auroc_ovr_mean": 0.9966666666666667,
+        "accuracy_std": 0.014907119849998594,
+        "f1_macro_std": 0.014869758647367016,
+        "log_loss_std": 0.014332902584309186,
+        "auroc_ovr_std": 0.0
+      }
+    }
+  },
+  "wine": {
+    "best_cfg": {
+      "train_config": {
+        "learning_rate": 0.01,
+        "weight_decay": 0.0001,
+        "batch_size": 64,
+        "max_epochs": 200,
+        "patience": 20
+      },
+      "active_config": {
+        "initial_labeled": 10,
+        "query_batch": 5,
+        "max_labels": 100
+      },
+      "hidden_units": 64
+    },
+    "best_metric": 0.9930049261083743,
+    "curve": {
+      "100": {
+        "accuracy_mean": 0.9722222222222221,
+        "f1_macro_mean": 0.970961887477314,
+        "log_loss_mean": 0.0564918639985306,
+        "auroc_ovr_mean": 1.0,
+        "accuracy_std": 1.2412670766236366e-16,
+        "f1_macro_std": 1.2412670766236366e-16,
+        "log_loss_std": 0.011897969822142867,
+        "auroc_ovr_std": 0.0
+      }
+    }
+  },
+  "breast_cancer": {
+    "best_cfg": {
+      "train_config": {
+        "learning_rate": 0.03,
+        "weight_decay": 0.001,
+        "batch_size": 64,
+        "max_epochs": 200,
+        "patience": 20
+      },
+      "active_config": {
+        "initial_labeled": 20,
+        "query_batch": 10,
+        "max_labels": 200
+      },
+      "hidden_units": 64
+    },
+    "best_metric": 0.9828571428571429,
+    "curve": {
+      "200": {
+        "accuracy_mean": 0.9578947368421054,
+        "f1_macro_mean": 0.9551491724599073,
+        "log_loss_mean": 0.14558856345363477,
+        "auroc_ovr_mean": 0.9906746031746032,
+        "accuracy_std": 0.00960916767552926,
+        "f1_macro_std": 0.010049861057528704,
+        "log_loss_std": 0.0352277254337104,
+        "auroc_ovr_std": 0.0030163371034368385
+      }
+    }
+  }
+}
